@@ -1,0 +1,14 @@
+{
+  "name": "hh-ru-apply",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "login": "node scripts/login.mjs",
+    "apply": "node scripts/apply.mjs"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "playwright": "^1.49.0"
+  }
+}
