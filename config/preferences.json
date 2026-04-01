@@ -1,0 +1,31 @@
+{
+  "minMonthlyUsd": 0,
+  "rubPerUsd": 98,
+  "requireRemote": false,
+  "allowHybrid": false,
+  "allowUnknownSalary": true,
+  "remotePositivePatterns": [
+    "удален",
+    "удалён",
+    "дистанцион",
+    "remote",
+    "работа из дома",
+    "из любой точки",
+    "любая локация"
+  ],
+  "hybridPatterns": [
+    "гибрид",
+    "hybrid"
+  ],
+  "officeOnlyPatterns": [
+    "только офис",
+    "офис обязателен",
+    "работа в офисе компании",
+    "в офисе ежедневно"
+  ],
+  "llmScoreWeights": {
+    "vacancy": 0.35,
+    "cvMatch": 0.65
+  },
+  "hhApplyChatMaxPerHour": 8
+}

@@ -5,10 +5,18 @@
   "type": "module",
   "scripts": {
     "login": "node scripts/login.mjs",
-    "apply": "node scripts/apply.mjs"
+    "apply": "node scripts/apply.mjs",
+    "scan-tg": "node scripts/scan-telegram.mjs",
+    "vacancies": "node scripts/open-vacancies.mjs",
+    "harvest": "node scripts/harvest.mjs",
+    "dashboard": "node scripts/dashboard-server.mjs",
+    "hh-fill-letter": "node scripts/hh-fill-response-letter.mjs",
+    "hh-apply-chat": "node scripts/hh-apply-chat-letter.mjs",
+    "codegen-hh": "node scripts/codegen-hh.mjs"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
+    "pdf-parse": "^2.4.5",
     "playwright": "^1.49.0"
   }
 }

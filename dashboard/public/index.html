@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>hh — очередь вакансий</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="top-row">
+        <h1>Очередь вакансий</h1>
+        <button type="button" class="btn btn-log-apply" title="Последние строки лога Playwright (Отклик в браузере)">
+          Лог отклика hh
+        </button>
+      </div>
+      <div class="tabs vacancy-tabs">
+        <button type="button" data-status="pending" class="tab active">На проверке</button>
+        <button type="button" data-status="approved" class="tab">Подходят</button>
+        <button type="button" data-status="rejected" class="tab">Отклонённые</button>
+      </div>
+    </header>
+    <main id="list"></main>
+    <template id="card-tpl">
+      <article class="card">
+        <button type="button" class="card-dismiss" aria-label="Удалить из очереди" title="Удалить без обработки">×</button>
+        <div class="card-head">
+          <div class="score-block">
+            <div class="score-row">
+              <div class="score-hover-wrap">
+                <span class="score" tabindex="0"></span>
+                <div class="score-tooltip" role="tooltip"></div>
+              </div>
+              <div class="model-info-wrap">
+                <button type="button" class="model-info-btn" hidden aria-label="Какая модель оценивала">i</button>
+                <div class="model-info-panel" hidden></div>
+              </div>
+            </div>
+          </div>
+          <a class="title-link" target="_blank" rel="noopener"></a>
+        </div>
+        <div class="meta"></div>
+        <p class="summary"></p>
+        <p class="risks"></p>
+        <div class="tags"></div>
+        <div class="apply-chat-row">
+          <button type="button" class="btn btn-apply-chat" disabled title="Сначала утвердите письмо в «Черновик письма»">
+            Отклик в браузере
+          </button>
+        </div>
+        <button type="button" class="cover-draft-btn" hidden>Черновик письма</button>
+        <button type="button" class="btn btn-cover btn-regenerate-letter" hidden>Снова сгенерировать письмо</button>
+        <button type="button" class="btn btn-view-approved" hidden>Письмо</button>
+        <div class="actions" hidden>
+          <textarea class="reason" rows="2" placeholder="Причина (особенно при отклонении)…"></textarea>
+          <div class="actions-toolbar">
+            <div class="actions-toolbar-start">
+              <button
+                type="button"
+                class="btn-icon btn-refresh-vacancy"
+                title="Обновить текст вакансии с hh.ru и заново оценить совпадение с CV (OpenRouter)"
+                aria-label="Обновить текст вакансии с hh.ru и заново оценить через OpenRouter"
+              >
+                <svg class="btn-icon-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path
+                    fill="currentColor"
+                    d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"
+                  />
+                </svg>
+              </button>
+              <button type="button" class="btn btn-cover">Создать сопроводительное</button>
+            </div>
+            <div class="actions-toolbar-end">
+              <button type="button" class="btn ok">Подходит</button>
+              <button type="button" class="btn bad">Не подходит</button>
+            </div>
+          </div>
+        </div>
+        <p class="done-reason"></p>
+      </article>
+    </template>
+    <div id="draft-modal" class="modal" hidden>
+      <div class="modal-backdrop" data-close-modal></div>
+      <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="draft-modal-title">
+        <div class="modal-head">
+          <h2 id="draft-modal-title" class="modal-title">Черновик письма</h2>
+          <button type="button" class="modal-close" aria-label="Закрыть">×</button>
+        </div>
+        <p class="modal-vacancy"></p>
+        <div class="modal-draft-body"></div>
+      </div>
+    </div>
+    <div id="apply-log-modal" class="modal" hidden>
+      <div class="modal-backdrop" data-close-apply-log></div>
+      <div class="modal-dialog modal-dialog--wide" role="dialog" aria-modal="true" aria-labelledby="apply-log-title">
+        <div class="modal-head">
+          <h2 id="apply-log-title" class="modal-title">Лог «Отклик в браузере»</h2>
+          <button type="button" class="modal-close modal-close--apply-log" aria-label="Закрыть">×</button>
+        </div>
+        <p class="apply-log-hint">
+          Файл на диске: <code class="apply-log-path"></code>. В терминале:
+          <code>tail -f data/hh-apply-chat.log</code>
+        </p>
+        <div class="apply-log-toolbar">
+          <button type="button" class="btn btn-refresh-apply-log">Обновить</button>
+        </div>
+        <pre class="apply-log-pre"></pre>
+      </div>
+    </div>
+    <div id="approved-letter-modal" class="modal" hidden>
+      <div class="modal-backdrop" data-close-approved-modal></div>
+      <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="approved-letter-title">
+        <div class="modal-head">
+          <h2 id="approved-letter-title" class="modal-title">Утверждённое письмо</h2>
+          <button type="button" class="modal-close modal-close--approved" aria-label="Закрыть">×</button>
+        </div>
+        <p class="modal-vacancy-approved"></p>
+        <pre class="modal-approved-text"></pre>
+        <div class="modal-draft-actions">
+          <button type="button" class="btn ok btn-copy-approved">Копировать</button>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
