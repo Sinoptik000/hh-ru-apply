@@ -1,7 +1,7 @@
 {
   "minMonthlyUsd": 0,
   "rubPerUsd": 98,
-  "requireRemote": false,
+  "requireRemote": true,
   "allowHybrid": false,
   "allowUnknownSalary": true,
   "remotePositivePatterns": [
