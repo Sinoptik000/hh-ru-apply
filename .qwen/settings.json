@@ -1,7 +1,25 @@
 {
   "permissions": {
     "allow": [
-      "Bash(mkdir *)"
+      "Bash(mkdir *)",
+      "Read(C:\\Users\\User\\.qwen\\projects/**)",
+      "Read(C:\\Users\\User\\.qwen\\debug/**)",
+      "Bash(dir *)",
+      "Read(C:\\Users\\User\\.qwen\\projects\\c--users-user-documents-projects\\chats/**)",
+      "Bash(findstr *)",
+      "Bash(@echo *)",
+      "Bash(@findstr *)",
+      "Bash(powershell *)",
+      "Bash(curl *)",
+      "Bash(docker ps *)",
+      "Bash(timeout *)",
+      "Bash(netstat *)",
+      "Bash(start *)",
+      "Bash(node *)",
+      "Bash(tasklist)",
+      "Bash(taskkill *)",
+      "Bash(git stash *)"
     ]
-  }
+  },
+  "$version": 3
 }

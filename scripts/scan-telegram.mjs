@@ -17,6 +17,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import 'dotenv/config';
+import { addVacancyRecord } from '../lib/store.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
@@ -27,8 +28,75 @@ const PERSISTENT_PROFILE = path.join(SESSION_DIR, 'chromium-profile');
 
 const headless = process.env.HH_HEADLESS === '1';
 const dryRun = process.argv.includes('--dry-run');
+const webMode = process.argv.includes('--web');
 const limit = Math.min(50, Math.max(1, Number(process.env.HH_SCAN_LIMIT || 10) || 10));
 const pauseMs = Math.max(500, Number(process.env.HH_PAUSE_MS || 2500) || 2500);
+
+// Загрузка preferences
+const prefsPath = process.env.HH_PREFS_FILE || path.join(ROOT, 'config', 'preferences.json');
+let prefs = {};
+try {
+  prefs = JSON.parse(fs.readFileSync(prefsPath, 'utf-8'));
+} catch {}
+
+function parseSalary(salaryText) {
+  if (!salaryText) return null;
+  const cleaned = salaryText.replace(/\s/g, '').replace(/–/g, '-');
+  const match = cleaned.match(/(\d[\d\s]*)/);
+  if (!match) return null;
+  return Number(match[1].replace(/\s/g, ''));
+}
+
+function detectWorkFormat(desc, fullText) {
+  const text = (desc + ' ' + fullText).toLowerCase();
+  const { officeOnlyPatterns = [], remotePositivePatterns = [], hybridPatterns = [] } = prefs;
+
+  for (const p of officeOnlyPatterns) {
+    if (text.includes(p.toLowerCase())) return 'office';
+  }
+  if (text.includes('офис') && !text.includes('не ') && !text.includes('без ')) {
+    if (text.includes('офис обязателен') || text.includes('только офис') || text.includes('в офисе ежедневно')) {
+      return 'office';
+    }
+  }
+  for (const p of hybridPatterns) {
+    if (text.includes(p.toLowerCase())) return 'hybrid';
+  }
+  for (const p of remotePositivePatterns) {
+    if (text.includes(p.toLowerCase())) return 'remote';
+  }
+  return 'unknown';
+}
+
+function passesFormatFilter(format) {
+  const { requireRemote = false, allowHybrid = false } = prefs;
+  if (requireRemote) {
+    return format === 'remote';
+  }
+  if (allowHybrid) {
+    return format === 'remote' || format === 'hybrid' || format === 'unknown';
+  }
+  return true;
+}
+
+function passesSalaryFilter(salaryText) {
+  const { minMonthlyUsd = 0, rubPerUsd = 98, allowUnknownSalary = true } = prefs;
+  if (!salaryText || minMonthlyUsd <= 0) return true;
+  const num = parseSalary(salaryText);
+  if (!num) return allowUnknownSalary;
+  const isRuble = /руб|RUR/i.test(salaryText);
+  const monthlyRub = isRuble ? num : num * rubPerUsd;
+  const minRub = minMonthlyUsd * rubPerUsd;
+  return monthlyRub >= minRub;
+}
+
+function checkVacancy(card) {
+  const fullText = `${card.title} ${card.company} ${card.salary} ${card.desc}`;
+  const format = detectWorkFormat(card.desc, fullText);
+  const formatOk = passesFormatFilter(format);
+  const salaryOk = passesSalaryFilter(card.salary);
+  return { format, formatOk, salaryOk };
+}
 
 function looksLikeLoginUrl(url) {
   const u = url.toLowerCase();
@@ -123,9 +191,9 @@ async function main() {
     process.exit(1);
   }
 
-  if (!dryRun && (!process.env.TELEGRAM_BOT_TOKEN || !process.env.TELEGRAM_CHAT_ID)) {
+  if (!dryRun && !webMode && (!process.env.TELEGRAM_BOT_TOKEN || !process.env.TELEGRAM_CHAT_ID)) {
     console.error(
-      'Нужны TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID в .env, либо запуск с флагом --dry-run'
+      'Нужны TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID в .env, либо запуск с флагом --dry-run или --web'
     );
     process.exit(1);
   }
@@ -170,6 +238,9 @@ async function main() {
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
     const chatId = process.env.TELEGRAM_CHAT_ID;
 
+    let sentCount = 0;
+    let skippedCount = 0;
+
     for (let i = 0; i < urls.length; i++) {
       const url = urls[i];
       console.log(`[${i + 1}/${urls.length}]`, url);
@@ -181,8 +252,21 @@ async function main() {
         continue;
       }
 
+      // Проверка по фильтрам
+      const check = checkVacancy(card);
+      if (!check.formatOk || !check.salaryOk) {
+        const reasons = [];
+        if (!check.formatOk) reasons.push(`формат: ${check.format}`);
+        if (!check.salaryOk) reasons.push('зарплата ниже минимума');
+        console.log(`  пропуск: ${reasons.join(', ')}`);
+        skippedCount++;
+        continue;
+      }
+
+      const formatBadge = check.format === 'remote' ? '🏠' : check.format === 'hybrid' ? '🔄' : '🏢';
+
       const block = [
-        `📌 ${card.title || '(без названия)'}`,
+        `${formatBadge} ${card.title || '(без названия)'}`,
         card.company ? `🏢 ${card.company}` : null,
         card.salary ? `💰 ${card.salary}` : null,
         '',
@@ -197,17 +281,41 @@ async function main() {
         console.log('---');
         console.log(block);
         console.log('---');
+      } else if (webMode) {
+        // Сохраняем в очередь дашборда
+        const vacancyIdMatch = url.match(/\/vacancy\/(\d+)/);
+        const vacancyId = vacancyIdMatch ? vacancyIdMatch[1] : url;
+        const saved = addVacancyRecord({
+          id: `scan_${Date.now()}_${vacancyId}`,
+          vacancyId,
+          url,
+          title: card.title || '',
+          company: card.company || '',
+          salaryRaw: card.salary || '',
+          descriptionPreview: card.desc?.slice(0, 600) || '',
+          descriptionForLlm: card.desc || '',
+          status: 'pending',
+          workFormat: check.format,
+          scannedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        console.log(`  сохранено: ${saved ? 'да' : 'нет (дубликат)'}`);
       } else {
         await sendTelegram(botToken, chatId, block);
       }
+      sentCount++;
 
       await new Promise((r) => setTimeout(r, pauseMs));
     }
 
-    if (!dryRun) {
-      await sendTelegram(botToken, chatId, `Готово: отправлено ${urls.length} вакансий по запросу «${query}».`);
+    if (!dryRun && !webMode) {
+      const summary = `Готово: отправлено ${sentCount}, пропущено ${skippedCount} вакансий по запросу «${query}».`;
+      await sendTelegram(botToken, chatId, summary);
     }
-    console.log('Готово.');
+    console.log(`Готово: сохранено/отправлено ${sentCount}, пропущено ${skippedCount}.`);
+    if (webMode) {
+      console.log(`Вакансии добавлены в дашборд: http://127.0.0.1:${process.env.DASHBOARD_PORT || 3849}`);
+    }
   } finally {
     await ctx.close();
   }
