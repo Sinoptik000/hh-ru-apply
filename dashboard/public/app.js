@@ -14,6 +14,9 @@ let draftModalState = null;
 /** @type {ReturnType<typeof setInterval> | null} */
 let applyLogRefreshTimer = null;
 
+// Проверяем активный sourcing при загрузке страницы
+checkActiveSourcing();
+
 document.addEventListener('click', () => {
   document.querySelectorAll('.model-info-panel').forEach((p) => {
     p.hidden = true;
@@ -338,88 +341,173 @@ const approvedModalEl = document.getElementById('approved-letter-modal');
 approvedModalEl?.querySelector('[data-close-approved-modal]')?.addEventListener('click', closeApprovedLetterModal);
 approvedModalEl?.querySelector('.modal-close--approved')?.addEventListener('click', closeApprovedLetterModal);
 
-// Sourcing modal
-const sourcingModalEl = document.getElementById('sourcing-modal');
-const sourcingKeywordsEl = document.getElementById('sourcing-keywords');
-const sourcingLimitValueEl = document.getElementById('sourcing-limit-value');
-const sourcingStartBtn = document.querySelector('.btn-start-sourcing');
-const sourcingLoadBtn = document.querySelector('.btn-load-keywords');
-const sourcingStatusEl = document.querySelector('.sourcing-status');
-const sourcingLogEl = document.querySelector('.sourcing-log');
+// Keywords dropdown
+const keywordsBtn = document.querySelector('.btn-keywords');
+const keywordsDropdown = document.querySelector('.keywords-list');
+const keywordsContent = document.getElementById('keywords-content');
+const keywordsCloseBtn = document.querySelector('.keywords-close');
 
-function openSourcingModal() {
-  if (!sourcingModalEl) return;
-  sourcingModalEl.hidden = false;
-  sourcingStatusEl.hidden = true;
-  sourcingLogEl.hidden = true;
-  sourcingStartBtn.disabled = !sourcingKeywordsEl.value.trim();
-}
+let keywordsLoaded = false;
 
-function closeSourcingModal() {
-  if (!sourcingModalEl) return;
-  sourcingModalEl.hidden = true;
-}
-
-sourcingModalEl?.querySelector('[data-close-sourcing]')?.addEventListener('click', closeSourcingModal);
-sourcingModalEl?.querySelector('.modal-close--sourcing')?.addEventListener('click', closeSourcingModal);
-
-sourcingKeywordsEl?.addEventListener('input', () => {
-  sourcingStartBtn.disabled = !sourcingKeywordsEl.value.trim();
-});
-
-sourcingLoadBtn?.addEventListener('click', async () => {
-  try {
-    const res = await api('/api/sourcing/load-keywords');
-    if (res.keywords?.length) {
-      sourcingKeywordsEl.value = res.keywords.join('\n');
-      sourcingStartBtn.disabled = false;
-      showToast(`Загружено ${res.keywords.length} ключей`, 'good');
-    } else {
-      showToast('Файл ключей пуст или не найден', 'neutral');
+keywordsBtn?.addEventListener('click', async () => {
+  if (keywordsDropdown.hidden) {
+    // Показываем dropdown
+    keywordsDropdown.hidden = false;
+    
+    // Загружаем ключевые слова если ещё не загружены
+    if (!keywordsLoaded) {
+      await loadKeywords();
     }
-  } catch (e) {
-    alert(e.message);
+  } else {
+    // Скрываем dropdown
+    keywordsDropdown.hidden = true;
   }
 });
 
-document.querySelector('.btn-sourcing')?.addEventListener('click', openSourcingModal);
-document.querySelector('.btn-log-apply')?.addEventListener('click', () => openApplyLogModal());
+keywordsCloseBtn?.addEventListener('click', () => {
+  keywordsDropdown.hidden = true;
+});
+
+// Закрыть dropdown при клике вне его
+document.addEventListener('click', (e) => {
+  if (!keywordsDropdown.hidden && 
+      !keywordsDropdown.contains(e.target) && 
+      e.target !== keywordsBtn) {
+    keywordsDropdown.hidden = true;
+  }
+});
+
+async function loadKeywords() {
+  try {
+    const res = await api('/api/sourcing/load-keywords');
+    if (res.keywords?.length) {
+      keywordsContent.innerHTML = res.keywords
+        .map(kw => `<div class="keyword-item">${kw}</div>`)
+        .join('');
+      keywordsLoaded = true;
+    } else {
+      keywordsContent.innerHTML = '<div class="keyword-item empty">Файл ключевых слов пуст</div>';
+      keywordsLoaded = true;
+    }
+  } catch (e) {
+    keywordsContent.innerHTML = `<div class="keyword-item empty">Ошибка загрузки: ${e.message}</div>`;
+  }
+}
+
+// Sourcing - запускаем сразу без модалки
+let sourcingPollInterval = null;
+
+document.querySelector('.btn-sourcing')?.addEventListener('click', async () => {
+  // Проверяем не запущен ли уже sourcing
+  try {
+    const currentProgress = await api('/api/sourcing/progress');
+    if (currentProgress.active) {
+      showToast('Sourcing уже запущен! Дождитесь завершения.', 'neutral');
+      return;
+    }
+  } catch (e) {
+    // Игнорируем ошибки проверки
+  }
+
+  // Загружаем ключевые слова из файла
+  let keywords;
+  try {
+    const res = await api('/api/sourcing/load-keywords');
+    if (!res.keywords?.length) {
+      showToast('Файл ключевых слов пуст или не найден', 'neutral');
+      return;
+    }
+    keywords = res.keywords;
+  } catch (e) {
+    showToast(`Ошибка загрузки ключей: ${e.message}`, 'bad');
+    return;
+  }
+
+  // Показываем прогресс-бар
+  const progressWrap = document.querySelector('.sourcing-progress-wrap');
+  const progressFill = document.querySelector('.sourcing-progress-fill');
+  const progressText = document.querySelector('.sourcing-progress-text');
+  if (progressWrap) progressWrap.hidden = false;
+  if (progressFill) progressFill.style.width = '0%';
+  if (progressText) progressText.textContent = `0/${keywords.length}`;
+
+  // Запускаем процесс
+  const scanLimit = 10; // default
+  
+  try {
+    const sourcingBtn = document.querySelector('.btn-sourcing');
+    sourcingBtn.disabled = true;
+    sourcingBtn.textContent = '⏳ Поиск...';
+    
+    const res = await api('/api/sourcing/start', {
+      method: 'POST',
+      body: JSON.stringify({ keywords, scanLimit }),
+    });
+    showToast(`Sourcing запущен: ${keywords.length} запросов`, 'good');
+
+    // Запускаем polling прогресса
+    startSourcingPolling(keywords.length, sourcingBtn);
+  } catch (e) {
+    showToast(`Ошибка sourcing: ${e.message}`, 'bad');
+    if (progressWrap) progressWrap.hidden = true;
+    const sourcingBtn = document.querySelector('.btn-sourcing');
+    sourcingBtn.disabled = false;
+    sourcingBtn.textContent = '🔍 Sourcing';
+  }
+});
 const applyLogModalEl = document.getElementById('apply-log-modal');
 applyLogModalEl?.querySelector('[data-close-apply-log]')?.addEventListener('click', closeApplyLogModal);
 applyLogModalEl?.querySelector('.modal-close--apply-log')?.addEventListener('click', closeApplyLogModal);
 applyLogModalEl?.querySelector('.btn-refresh-apply-log')?.addEventListener('click', () => refreshApplyLogModal());
 
-// Sourcing start
-sourcingStartBtn?.addEventListener('click', async () => {
-  const keywords = sourcingKeywordsEl.value
-    .split('\n')
-    .map(s => s.trim())
-    .filter(s => s && !s.startsWith('#'));
-  if (!keywords.length) {
-    alert('Введите хотя бы один поисковый запрос');
-    return;
+function startSourcingPolling(total, sourcingBtn) {
+  // Очищаем предыдущий интервал если есть
+  if (sourcingPollInterval) {
+    clearInterval(sourcingPollInterval);
   }
-  const scanLimit = Number(sourcingLimitValueEl.value) || 10;
-  sourcingStartBtn.disabled = true;
-  sourcingStatusEl.hidden = false;
-  sourcingLogEl.hidden = false;
-  sourcingStatusEl.textContent = `Запуск поиска по ${keywords.length} запросам...`;
-  sourcingLogEl.textContent = '';
 
-  try {
-    const res = await api('/api/sourcing/start', {
-      method: 'POST',
-      body: JSON.stringify({ keywords, scanLimit }),
-    });
-    sourcingStatusEl.textContent = `✅ Поиск запущен. Запросов: ${keywords.length}. Обновите страницу когда завершит.`;
-    showToast(`Sourcing запущен: ${keywords.length} запросов`, 'good');
-  } catch (e) {
-    sourcingStatusEl.textContent = `❌ Ошибка: ${e.message}`;
-    showToast(`Ошибка sourcing: ${e.message}`, 'bad');
-  } finally {
-    sourcingStartBtn.disabled = false;
-  }
-});
+  const progressFill = document.querySelector('.sourcing-progress-fill');
+  const progressText = document.querySelector('.sourcing-progress-text');
+
+  // Polling каждые 2 секунды
+  sourcingPollInterval = setInterval(async () => {
+    try {
+      const progress = await api('/api/sourcing/progress');
+      
+      if (progressFill) {
+        progressFill.style.width = `${progress.percent}%`;
+      }
+      if (progressText) {
+        // Показываем вакансии: обработано/всего
+        progressText.textContent = `${progress.completed}/${progress.total}`;
+      }
+
+      // Если завершено - обновляем страницу
+      if (!progress.active && progress.percent === 100) {
+        clearInterval(sourcingPollInterval);
+        sourcingPollInterval = null;
+        
+        showToast(`Sourcing завершён! Найдено ${progress.total} вакансий`, 'good');
+        
+        // Включаем кнопку обратно
+        if (sourcingBtn) {
+          sourcingBtn.disabled = false;
+          sourcingBtn.textContent = '🔍 Sourcing';
+        }
+        
+        // Скрываем прогресс-бар через 2 секунды и обновляем страницу
+        const progressWrap = document.querySelector('.sourcing-progress-wrap');
+        setTimeout(() => {
+          if (progressWrap) progressWrap.hidden = true;
+          // Автообновление страницы
+          window.location.reload();
+        }, 2000);
+      }
+    } catch (e) {
+      console.error('Ошибка polling прогресса:', e);
+    }
+  }, 2000);
+}
 
 approvedModalEl?.querySelector('.btn-copy-approved')?.addEventListener('click', async () => {
   const pre = approvedModalEl.querySelector('.modal-approved-text');
@@ -753,4 +841,35 @@ vacancyTabsEl.querySelectorAll('.tab').forEach((btn) => {
 });
 
 syncVacancyTabs();
+
+// Проверка активного sourcing при загрузке
+async function checkActiveSourcing() {
+  try {
+    const progress = await api('/api/sourcing/progress');
+    
+    if (progress.active && progress.total > 0) {
+      // Sourcing ещё идёт - показываем прогресс
+      const progressWrap = document.querySelector('.sourcing-progress-wrap');
+      const progressFill = document.querySelector('.sourcing-progress-fill');
+      const progressText = document.querySelector('.sourcing-progress-text');
+      const sourcingBtn = document.querySelector('.btn-sourcing');
+
+      if (progressWrap) progressWrap.hidden = false;
+      if (progressFill) progressFill.style.width = `${progress.percent}%`;
+      if (progressText) progressText.textContent = `${progress.completed}/${progress.total}`;
+      
+      // Отключаем кнопку и меняем текст
+      if (sourcingBtn) {
+        sourcingBtn.disabled = true;
+        sourcingBtn.textContent = '⏳ Поиск...';
+      }
+
+      // Возобновляем polling
+      startSourcingPolling(progress.total, sourcingBtn);
+    }
+  } catch (e) {
+    // Игнорируем ошибки при проверке
+    console.error('Ошибка проверки активного sourcing:', e);
+  }
+}
 load();

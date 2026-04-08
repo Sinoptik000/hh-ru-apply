@@ -13,7 +13,8 @@
     "dashboard": "node scripts/dashboard-server.mjs",
     "hh-fill-letter": "node scripts/hh-fill-response-letter.mjs",
     "hh-apply-chat": "node scripts/hh-apply-chat-letter.mjs",
-    "codegen-hh": "node scripts/codegen-hh.mjs"
+    "codegen-hh": "node scripts/codegen-hh.mjs",
+    "init-rejected": "node scripts/init-rejected-ids.mjs"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

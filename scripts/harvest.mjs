@@ -23,6 +23,7 @@ import {
   scoreVacancyWithOpenRouter,
 } from '../lib/openrouter-score.mjs';
 import { addVacancyRecord, knownVacancyIds } from '../lib/store.mjs';
+import { loadRejectedVacancyIds } from '../lib/rejected-ids.mjs';
 
 const DEFAULT_KEYWORDS_FILE = path.join(ROOT, 'config', 'search-keywords.txt');
 
@@ -136,6 +137,7 @@ async function main() {
     }
 
     const seenIds = knownVacancyIds();
+    const rejectedIds = loadRejectedVacancyIds();
     const urls = [];
     const globalSeen = new Set();
 
@@ -149,7 +151,7 @@ async function main() {
         if (urls.length >= sessionLimit) break;
         if (n >= perKeyLimit) break;
         const id = vacancyIdFromUrl(u);
-        if (!id || globalSeen.has(id) || seenIds.has(id)) continue;
+        if (!id || globalSeen.has(id) || seenIds.has(id) || rejectedIds.has(id)) continue;
         globalSeen.add(id);
         urls.push({ url: u, query: key });
         n++;
@@ -158,7 +160,7 @@ async function main() {
     }
 
     if (!urls.length) {
-      console.log('Нет новых ссылок (все уже в очереди или пустая выдача).');
+      console.log('Нет новых ссылок (все уже в очереди, в списке отклонённых или пустая выдача).');
       return;
     }
 

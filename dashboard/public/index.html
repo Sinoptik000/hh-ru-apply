@@ -11,9 +11,29 @@
       <div class="top-row">
         <h1>Очередь вакансий</h1>
         <div class="top-actions">
-          <button type="button" class="btn btn-sourcing" title="Запустить поиск вакансий на hh.ru">
-            🔍 Sourcing
-          </button>
+          <div class="sourcing-group">
+            <div class="keywords-dropdown">
+              <button type="button" class="btn btn-keywords" title="Просмотреть ключевые слова">
+                📝 Названия
+              </button>
+              <div class="keywords-list" hidden>
+                <div class="keywords-header">
+                  <span>Ключевые слова</span>
+                  <button type="button" class="keywords-close" title="Закрыть">×</button>
+                </div>
+                <div class="keywords-content" id="keywords-content"></div>
+              </div>
+            </div>
+            <button type="button" class="btn btn-sourcing" title="Запустить поиск вакансий на hh.ru">
+              🔍 Sourcing
+            </button>
+            <div class="sourcing-progress-wrap" hidden>
+              <div class="sourcing-progress-bar">
+                <div class="sourcing-progress-fill" style="width: 0%"></div>
+              </div>
+              <span class="sourcing-progress-text">0/0</span>
+            </div>
+          </div>
           <button type="button" class="btn btn-log-apply" title="Последние строки лога Playwright (Отклик в браузере)">
             Лог отклика hh
           </button>
@@ -123,33 +143,6 @@
         <pre class="modal-approved-text"></pre>
         <div class="modal-draft-actions">
           <button type="button" class="btn ok btn-copy-approved">Копировать</button>
-        </div>
-      </div>
-    </div>
-    <div id="sourcing-modal" class="modal" hidden>
-      <div class="modal-backdrop" data-close-sourcing></div>
-      <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="sourcing-title">
-        <div class="modal-head">
-          <h2 id="sourcing-title" class="modal-title">🔍 Sourcing вакансий</h2>
-          <button type="button" class="modal-close modal-close--sourcing" aria-label="Закрыть">×</button>
-        </div>
-        <div class="sourcing-form">
-          <label class="sourcing-label">
-            Ключевые слова (каждый запрос с новой строки):
-            <textarea id="sourcing-keywords" class="sourcing-textarea" rows="6" placeholder="Операционный менеджер&#10;Менеджер проектов&#10;Operations manager"></textarea>
-          </label>
-          <div class="sourcing-options">
-            <label class="sourcing-option">
-              <input type="checkbox" id="sourcing-scan-limit" value="10">
-              Лимит на запрос: <input type="number" id="sourcing-limit-value" class="sourcing-number" value="10" min="1" max="50">
-            </label>
-          </div>
-          <div class="sourcing-btns">
-            <button type="button" class="btn ok btn-start-sourcing" disabled>Запустить поиск</button>
-            <button type="button" class="btn btn-load-keywords" title="Загрузить из config/search-keywords.txt">Загрузить из файла</button>
-          </div>
-          <div class="sourcing-status" hidden></div>
-          <pre class="sourcing-log" hidden></pre>
         </div>
       </div>
     </div>

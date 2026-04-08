@@ -18,6 +18,7 @@ import {
   getVacancyRecord,
   removeVacancyRecord,
 } from '../lib/store.mjs';
+import { addRejectedVacancyId } from '../lib/rejected-ids.mjs';
 import { loadPreferences } from '../lib/preferences.mjs';
 import { appendFeedback } from '../lib/feedback-context.mjs';
 import { loadCvBundle } from '../lib/cv-load.mjs';
@@ -32,6 +33,61 @@ import { fetchVacancyTextFromHh } from '../lib/refresh-vacancy-from-hh.mjs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const STATIC_DIR = path.join(ROOT, 'dashboard', 'public');
 const PORT = Number(process.env.DASHBOARD_PORT || 3849) || 3849;
+
+// Sourcing progress tracking
+let sourcingProgress = {
+  active: false,
+  total: 0, // общее количество вакансий (накапливается)
+  completed: 0, // обработано вакансий
+  currentKeyword: '', // текущее ключевое слово
+  currentKeywordTotal: 0, // вакансий в текущем запросе
+  keywordsCount: 0, // всего ключевых слов
+  completedKeywords: 0, // завершено ключевых слов
+  startedAt: null,
+};
+
+// Функция для парсинга прогресса из лога
+function updateProgressFromLog(progressLogFile) {
+  try {
+    if (!fs.existsSync(progressLogFile)) return;
+    
+    const logContent = fs.readFileSync(progressLogFile, 'utf-8');
+    
+    // Ищем все паттерны "Найдено ссылок (до лимита N): X"
+    const foundMatches = logContent.match(/Найдено ссылок \(до лимита \d+\):\s+(\d+)/g);
+    if (foundMatches) {
+      // Суммируем все найденные вакансии из всех запросов
+      let newTotal = 0;
+      for (const match of foundMatches) {
+        const countMatch = match.match(/:\s*(\d+)$/);
+        if (countMatch) {
+          newTotal += parseInt(countMatch[1]);
+        }
+      }
+      sourcingProgress.total = newTotal;
+    }
+    
+    // Ищем все паттерны "[X/Y]" для каждого запроса
+    // Нам нужно суммировать completed из всех завершенных запросов + текущий
+    const progressLines = logContent.match(/\[(\d+)\/(\d+)\].*/g);
+    if (progressLines && progressLines.length > 0) {
+      // Берем последнюю строку - это текущий прогресс
+      const lastLine = progressLines[progressLines.length - 1];
+      const parts = lastLine.match(/\[(\d+)\/(\d+)\]/);
+      if (parts) {
+        const completedInCurrent = parseInt(parts[1]);
+        
+        // Считаем сколько вакансий в предыдущих завершенных запросах
+        const previousVacancies = sourcingProgress.total - sourcingProgress.currentKeywordTotal;
+        
+        // Общий completed = предыдущие + текущий завершенные
+        sourcingProgress.completed = previousVacancies + completedInCurrent;
+      }
+    }
+  } catch (e) {
+    console.error('Ошибка обновления прогресса:', e);
+  }
+}
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -170,6 +226,15 @@ const server = http.createServer(async (req, res) => {
       status: nextStatus,
       feedbackReason: String(reason || '').trim(),
     });
+
+    // Сохраняем vacancyId в перманентный чёрный список
+    if (nextStatus === 'rejected') {
+      addRejectedVacancyId(rec.vacancyId, {
+        title: rec.title,
+        url: rec.url,
+        reason: String(reason || '').trim(),
+      });
+    }
 
     appendFeedback({
       at: new Date().toISOString(),
@@ -528,42 +593,110 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 500, { error: 'Скрипт scan-telegram.mjs не найден' });
     }
 
-    // Запускаем последовательно для каждого ключа
+    // Инициализируем прогресс
+    sourcingProgress = {
+      active: true,
+      total: 0, // будет накапливаться по мере нахождения вакансий
+      completed: 0,
+      currentKeyword: keywords[0],
+      currentKeywordTotal: 0,
+      keywordsCount: keywords.length,
+      completedKeywords: 0,
+      startedAt: new Date().toISOString(),
+    };
+
     const logFile = path.join(DATA_DIR, 'sourcing.log');
     const header = `\n======== ${new Date().toISOString()} sourcing started ========\n`;
     fs.appendFileSync(logFile, header, 'utf-8');
 
-    const logFd = fs.openSync(logFile, 'a');
-    const env = { ...process.env };
-    if (scanLimit) env.HH_SCAN_LIMIT = String(scanLimit);
+    // Очищаем прогресс-лог для парсинга
+    const progressLogFile = path.join(DATA_DIR, 'sourcing-progress.log');
+    fs.writeFileSync(progressLogFile, '', 'utf-8');
 
-    let child;
-    try {
-      const args = [scriptPath, '--web', ...keywords];
-      child = spawn(process.execPath, args, {
-        cwd: ROOT,
-        detached: true,
-        stdio: ['ignore', logFd, logFd],
-        env,
-      });
-    } finally {
-      fs.closeSync(logFd);
-    }
+    // Запускаем каждое ключевое слово отдельным процессом последовательно
+    const runKeyword = (index) => {
+      if (index >= keywords.length) {
+        // Все ключи обработаны
+        sourcingProgress.active = false;
+        sourcingProgress.currentKeyword = 'Завершено!';
+        return;
+      }
 
-    child.on('exit', (code, signal) => {
-      const line = `\n--- sourcing exit code=${code} signal=${signal || ''} at ${new Date().toISOString()} ---\n`;
+      const keyword = keywords[index];
+      sourcingProgress.currentKeyword = keyword;
+      sourcingProgress.currentKeywordTotal = 0; // сброс для нового запроса
+
+      const logFd = fs.openSync(logFile, 'a');
+      const progressLogFd = fs.openSync(progressLogFile, 'a');
+      const env = { ...process.env };
+      if (scanLimit) env.HH_SCAN_LIMIT = String(scanLimit);
+
+      let child;
       try {
-        fs.appendFileSync(logFile, line, 'utf-8');
-      } catch { /* ignore */ }
-    });
+        // Одно ключевое слово = один поисковый запрос
+        const args = [scriptPath, '--web', keyword];
+        child = spawn(process.execPath, args, {
+          cwd: ROOT,
+          stdio: ['ignore', 'pipe', logFd], // stdout в pipe для парсинга
+          env,
+        });
 
-    child.unref();
+        // Парсим stdout для отслеживания прогресса
+        if (child.stdout) {
+          child.stdout.on('data', (data) => {
+            const text = data.toString();
+            fs.appendFileSync(progressLogFile, text, 'utf-8');
+            updateProgressFromLog(progressLogFile);
+          });
+        }
+      } finally {
+        fs.closeSync(logFd);
+        fs.closeSync(progressLogFd);
+      }
+
+      child.on('exit', (code, signal) => {
+        const line = `\n--- keyword "${keyword}" exit code=${code} signal=${signal || ''} at ${new Date().toISOString()} ---\n`;
+        try {
+          fs.appendFileSync(logFile, line, 'utf-8');
+        } catch { /* ignore */ }
+
+        // Увеличиваем счетчик завершенных запросов
+        sourcingProgress.completedKeywords = index + 1;
+
+        // Запускаем следующий ключ через паузу (чтобы не спамить hh.ru)
+        if (index + 1 < keywords.length) {
+          setTimeout(() => runKeyword(index + 1), 5000); // 5 секунд между запросами
+        } else {
+          // Последний ключ завершен
+          sourcingProgress.active = false;
+          sourcingProgress.currentKeyword = 'Завершено!';
+        }
+      });
+    };
+
+    // Запускаем первый запрос
+    runKeyword(0);
 
     return sendJson(res, 200, {
       ok: true,
-      pid: child.pid,
       keywordsCount: keywords.length,
       logFile: path.relative(ROOT, logFile),
+    });
+  }
+
+  // --- Sourcing progress endpoint ---
+  if (req.method === 'GET' && pathname === '/api/sourcing/progress') {
+    // Обновляем прогресс из лога если активен
+    if (sourcingProgress.active) {
+      const progressLogFile = path.join(DATA_DIR, 'sourcing-progress.log');
+      updateProgressFromLog(progressLogFile);
+    }
+
+    return sendJson(res, 200, {
+      ...sourcingProgress,
+      percent: sourcingProgress.total > 0 
+        ? Math.round((sourcingProgress.completed / sourcingProgress.total) * 100) 
+        : 0,
     });
   }
 

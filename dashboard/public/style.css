@@ -78,6 +78,129 @@ h1 {
   background: #323f56;
 }
 
+.btn-keywords {
+  font-size: 0.9rem;
+  padding: 0.4rem 0.85rem;
+  background: #2a3548;
+  border: 1px solid #3d4f6a;
+  color: #8892a4;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-keywords:hover {
+  background: #323f56;
+  color: #a8b2c4;
+}
+
+/* Keywords dropdown */
+.keywords-dropdown {
+  position: relative;
+}
+
+.keywords-list {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  min-width: 300px;
+  background: #1e2633;
+  border: 1px solid #3d4f6a;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.keywords-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #252d3a;
+  border-bottom: 1px solid #3d4f6a;
+  font-weight: 600;
+  color: #a8b2c4;
+}
+
+.keywords-close {
+  background: none;
+  border: none;
+  color: #8892a4;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.keywords-close:hover {
+  color: #fff;
+}
+
+.keywords-content {
+  padding: 0.75rem 1rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.keywords-content .keyword-item {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #2a3548;
+  color: #c8d0dc;
+  font-size: 0.9rem;
+}
+
+.keywords-content .keyword-item:last-child {
+  border-bottom: none;
+}
+
+.keywords-content .keyword-item.empty {
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* Sourcing progress bar */
+.sourcing-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sourcing-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sourcing-progress-bar {
+  width: 120px;
+  height: 8px;
+  background: #1e2633;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #3d4f6a;
+}
+
+.sourcing-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4CAF50, #8BC34A);
+  transition: width 0.5s ease;
+  border-radius: 3px;
+}
+
+.sourcing-progress-text {
+  font-size: 0.8rem;
+  color: #8892a4;
+  font-weight: 600;
+  min-width: 40px;
+  text-align: center;
+}
+
 .view-switch {
   display: flex;
   gap: 0.5rem;
