@@ -444,6 +444,39 @@ h1 {
   margin-bottom: 0.5rem;
 }
 
+.workplace-badge-row {
+  margin-bottom: 0.5rem;
+}
+
+.workplace-badge {
+  display: inline-block;
+  padding: 0.2em 0.6em;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.workplace-badge[data-workplace-type="удаленка"] {
+  background: #1b3a2a;
+  color: #6ee7a0;
+}
+
+.workplace-badge[data-workplace-type="гибрид"] {
+  background: #3a2f1b;
+  color: #e7c96e;
+}
+
+.workplace-badge[data-workplace-type="офис"] {
+  background: #3a1b1b;
+  color: #e76e6e;
+}
+
+.workplace-badge[data-workplace-type="не указано"] {
+  background: #2a2a2e;
+  color: #999;
+}
+
 .summary,
 .risks {
   margin: 0.4rem 0;

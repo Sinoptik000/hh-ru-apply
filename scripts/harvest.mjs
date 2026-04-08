@@ -238,6 +238,7 @@ async function main() {
         salaryEstimate: filter.salaryEstimate,
         remoteNote: filter.remoteReason,
         salaryNote: filter.salaryReason,
+        workplaceType: filter.workplaceType || 'не указано',
         descriptionPreview: parsed.description.slice(0, 600),
         descriptionForLlm: parsed.description.slice(0, 6000),
         llmProvider: 'openrouter',
