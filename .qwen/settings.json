@@ -18,7 +18,10 @@
       "Bash(node *)",
       "Bash(tasklist)",
       "Bash(taskkill *)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(git checkout *)",
+      "Bash(git merge *)",
+      "Bash(git push *)"
     ]
   },
   "$version": 3
