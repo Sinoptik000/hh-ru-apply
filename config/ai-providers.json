@@ -1,0 +1,60 @@
+{
+  "providers": [
+    {
+      "name": "openrouter",
+      "enabled": true,
+      "priority": 1,
+      "model": "openrouter/free",
+      "envKey": "OpenRouter_API_KEY",
+      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+      "maxTokens": 1500,
+      "temperature": 0.35,
+      "timeoutMs": 30000,
+      "maxRetries": 2,
+      "freeOnly": true
+    },
+    {
+      "name": "google",
+      "enabled": true,
+      "priority": 2,
+      "model": "gemini-2.0-flash-lite",
+      "envKey": "GOOGLE_API_KEY",
+      "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+      "maxTokens": 1500,
+      "temperature": 0.35,
+      "timeoutMs": 30000,
+      "maxRetries": 2,
+      "freeOnly": true,
+      "freeModels": [
+        "gemini-2.0-flash-lite",
+        "gemini-2.0-flash",
+        "gemini-1.5-flash"
+      ]
+    },
+    {
+      "name": "groq",
+      "enabled": true,
+      "priority": 3,
+      "model": "llama-3.3-70b-versatile",
+      "envKey": "GROQ_API_KEY",
+      "endpoint": "https://api.groq.com/openai/v1/chat/completions",
+      "maxTokens": 1500,
+      "temperature": 0.35,
+      "timeoutMs": 30000,
+      "maxRetries": 2,
+      "freeOnly": true,
+      "freeModels": [
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant",
+        "mixtral-8x7b-32768",
+        "gemma2-9b-it",
+        "deepseek-r1-distill-llama-70b"
+      ]
+    }
+  ],
+  "fallback": {
+    "onEmptyResponse": true,
+    "onErrorStatuses": [429, 500, 502, 503, 504],
+    "logFailures": true
+  }
+}
