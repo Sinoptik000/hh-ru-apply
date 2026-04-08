@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "login": "node scripts/login.mjs",
+    "browser": "node scripts/login.mjs --stay-open",
     "apply": "node scripts/apply.mjs",
     "scan-tg": "node scripts/scan-telegram.mjs",
     "vacancies": "node scripts/open-vacancies.mjs",

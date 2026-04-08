@@ -3,6 +3,7 @@
   "rubPerUsd": 98,
   "requireRemote": true,
   "allowHybrid": false,
+  "allowUnknownFormat": true,
   "allowUnknownSalary": true,
   "remotePositivePatterns": [
     "удален",

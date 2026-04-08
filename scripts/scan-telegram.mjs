@@ -18,6 +18,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import 'dotenv/config';
 import { addVacancyRecord } from '../lib/store.mjs';
+import { runHardFilters } from '../lib/filters.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
@@ -69,33 +70,33 @@ function detectWorkFormat(desc, fullText) {
 }
 
 function passesFormatFilter(format) {
-  const { requireRemote = false, allowHybrid = false } = prefs;
-  if (requireRemote) {
-    return format === 'remote';
-  }
-  if (allowHybrid) {
-    return format === 'remote' || format === 'hybrid' || format === 'unknown';
-  }
+  const { requireRemote = false, allowHybrid = false, allowUnknownFormat = false } = prefs;
+  if (format === 'office') return false;
+  if (format === 'remote') return true;
+  if (format === 'hybrid') return allowHybrid;
+  if (format === 'unknown') return allowUnknownFormat || (!requireRemote && !allowHybrid);
   return true;
 }
 
 function passesSalaryFilter(salaryText) {
-  const { minMonthlyUsd = 0, rubPerUsd = 98, allowUnknownSalary = true } = prefs;
-  if (!salaryText || minMonthlyUsd <= 0) return true;
-  const num = parseSalary(salaryText);
-  if (!num) return allowUnknownSalary;
-  const isRuble = /руб|RUR/i.test(salaryText);
-  const monthlyRub = isRuble ? num : num * rubPerUsd;
-  const minRub = minMonthlyUsd * rubPerUsd;
-  return monthlyRub >= minRub;
+  const filter = runHardFilters({ title: '', company: '', salaryRaw: salaryText || '', employment: '', address: '', description: '' }, prefs);
+  return filter.pass || filter.stage !== 'salary';
 }
 
 function checkVacancy(card) {
-  const fullText = `${card.title} ${card.company} ${card.salary} ${card.desc}`;
-  const format = detectWorkFormat(card.desc, fullText);
-  const formatOk = passesFormatFilter(format);
-  const salaryOk = passesSalaryFilter(card.salary);
-  return { format, formatOk, salaryOk };
+  const filter = runHardFilters({
+    title: card.title || '',
+    company: card.company || '',
+    salaryRaw: card.salary || '',
+    employment: '',
+    address: '',
+    description: card.desc || '',
+  }, prefs);
+  return {
+    formatOk: filter.pass || filter.stage !== 'remote',
+    salaryOk: filter.pass || filter.stage !== 'salary',
+    remoteReason: filter.remoteReason || filter.reason || '',
+  };
 }
 
 function looksLikeLoginUrl(url) {
@@ -256,14 +257,14 @@ async function main() {
       const check = checkVacancy(card);
       if (!check.formatOk || !check.salaryOk) {
         const reasons = [];
-        if (!check.formatOk) reasons.push(`формат: ${check.format}`);
+        if (!check.formatOk) reasons.push(check.remoteReason || 'формат не подходит');
         if (!check.salaryOk) reasons.push('зарплата ниже минимума');
         console.log(`  пропуск: ${reasons.join(', ')}`);
         skippedCount++;
         continue;
       }
 
-      const formatBadge = check.format === 'remote' ? '🏠' : check.format === 'hybrid' ? '🔄' : '🏢';
+      const formatBadge = check.remoteReason.includes('удалён') ? '🏠' : check.remoteReason.includes('Гибрид') ? '🔄' : '❓';
 
       const block = [
         `${formatBadge} ${card.title || '(без названия)'}`,

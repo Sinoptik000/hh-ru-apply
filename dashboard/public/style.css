@@ -35,6 +35,13 @@ body {
   margin-bottom: 0.75rem;
 }
 
+.top-actions {
+  display: flex;
+  flex-shrink: 1;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 h1 {
   margin: 0;
   font-size: 1.35rem;
@@ -42,7 +49,6 @@ h1 {
 }
 
 .btn-log-apply {
-  flex-shrink: 0;
   font-size: 0.85rem;
   padding: 0.35rem 0.75rem;
   background: var(--panel);
@@ -55,6 +61,21 @@ h1 {
 .btn-log-apply:hover {
   color: var(--accent);
   border-color: var(--accent);
+}
+
+.btn-sourcing {
+  font-size: 0.9rem;
+  padding: 0.4rem 0.85rem;
+  background: #2a3548;
+  border: 1px solid #3d4f6a;
+  color: var(--accent);
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-sourcing:hover {
+  background: #323f56;
 }
 
 .view-switch {
@@ -821,4 +842,100 @@ h1 {
 .toast--neutral {
   background: var(--panel);
   color: var(--text);
+}
+
+/* Sourcing modal */
+.sourcing-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sourcing-label {
+  font-size: 0.88rem;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sourcing-textarea {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.88rem;
+  line-height: 1.45;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.sourcing-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.sourcing-option {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.sourcing-number {
+  width: 4rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.sourcing-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.btn-load-keywords {
+  background: var(--bg);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+
+.btn-load-keywords:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.btn-start-sourcing:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sourcing-status {
+  font-size: 0.88rem;
+  color: var(--accent);
+  padding: 0.5rem 0;
+}
+
+.sourcing-log {
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  max-height: 20rem;
+  overflow: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, monospace;
 }

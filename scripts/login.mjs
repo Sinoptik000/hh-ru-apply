@@ -31,6 +31,8 @@ function waitEnter(message) {
   });
 }
 
+const stayOpen = process.argv.includes('--stay-open');
+
 async function main() {
   ensureDir(SESSION_DIR);
   const ctx = await chromium.launchPersistentContext(PERSISTENT_PROFILE, {
@@ -40,6 +42,18 @@ async function main() {
   });
   const page = ctx.pages()[0] || (await ctx.newPage());
   await page.goto('https://hh.ru/', { waitUntil: 'domcontentloaded' });
+
+  if (stayOpen) {
+    console.log('Браузер открыт. Закройте окно для завершения.');
+    await new Promise((resolve) => {
+      ctx.on('close', resolve);
+      // Fallback: слушаем процесс
+      process.on('SIGINT', async () => { await ctx.close(); resolve(); });
+      process.on('SIGTERM', async () => { await ctx.close(); resolve(); });
+    });
+    console.log('Браузер закрыт.');
+    return;
+  }
 
   await waitEnter(
     'Войдите в аккаунт hh.ru в открытом окне. Когда закончите, нажмите Enter здесь: '

@@ -337,11 +337,89 @@ draftModalEl?.querySelector('.modal-close')?.addEventListener('click', closeDraf
 const approvedModalEl = document.getElementById('approved-letter-modal');
 approvedModalEl?.querySelector('[data-close-approved-modal]')?.addEventListener('click', closeApprovedLetterModal);
 approvedModalEl?.querySelector('.modal-close--approved')?.addEventListener('click', closeApprovedLetterModal);
+
+// Sourcing modal
+const sourcingModalEl = document.getElementById('sourcing-modal');
+const sourcingKeywordsEl = document.getElementById('sourcing-keywords');
+const sourcingLimitValueEl = document.getElementById('sourcing-limit-value');
+const sourcingStartBtn = document.querySelector('.btn-start-sourcing');
+const sourcingLoadBtn = document.querySelector('.btn-load-keywords');
+const sourcingStatusEl = document.querySelector('.sourcing-status');
+const sourcingLogEl = document.querySelector('.sourcing-log');
+
+function openSourcingModal() {
+  if (!sourcingModalEl) return;
+  sourcingModalEl.hidden = false;
+  sourcingStatusEl.hidden = true;
+  sourcingLogEl.hidden = true;
+  sourcingStartBtn.disabled = !sourcingKeywordsEl.value.trim();
+}
+
+function closeSourcingModal() {
+  if (!sourcingModalEl) return;
+  sourcingModalEl.hidden = true;
+}
+
+sourcingModalEl?.querySelector('[data-close-sourcing]')?.addEventListener('click', closeSourcingModal);
+sourcingModalEl?.querySelector('.modal-close--sourcing')?.addEventListener('click', closeSourcingModal);
+
+sourcingKeywordsEl?.addEventListener('input', () => {
+  sourcingStartBtn.disabled = !sourcingKeywordsEl.value.trim();
+});
+
+sourcingLoadBtn?.addEventListener('click', async () => {
+  try {
+    const res = await api('/api/sourcing/load-keywords');
+    if (res.keywords?.length) {
+      sourcingKeywordsEl.value = res.keywords.join('\n');
+      sourcingStartBtn.disabled = false;
+      showToast(`Загружено ${res.keywords.length} ключей`, 'good');
+    } else {
+      showToast('Файл ключей пуст или не найден', 'neutral');
+    }
+  } catch (e) {
+    alert(e.message);
+  }
+});
+
+document.querySelector('.btn-sourcing')?.addEventListener('click', openSourcingModal);
 document.querySelector('.btn-log-apply')?.addEventListener('click', () => openApplyLogModal());
 const applyLogModalEl = document.getElementById('apply-log-modal');
 applyLogModalEl?.querySelector('[data-close-apply-log]')?.addEventListener('click', closeApplyLogModal);
 applyLogModalEl?.querySelector('.modal-close--apply-log')?.addEventListener('click', closeApplyLogModal);
 applyLogModalEl?.querySelector('.btn-refresh-apply-log')?.addEventListener('click', () => refreshApplyLogModal());
+
+// Sourcing start
+sourcingStartBtn?.addEventListener('click', async () => {
+  const keywords = sourcingKeywordsEl.value
+    .split('\n')
+    .map(s => s.trim())
+    .filter(s => s && !s.startsWith('#'));
+  if (!keywords.length) {
+    alert('Введите хотя бы один поисковый запрос');
+    return;
+  }
+  const scanLimit = Number(sourcingLimitValueEl.value) || 10;
+  sourcingStartBtn.disabled = true;
+  sourcingStatusEl.hidden = false;
+  sourcingLogEl.hidden = false;
+  sourcingStatusEl.textContent = `Запуск поиска по ${keywords.length} запросам...`;
+  sourcingLogEl.textContent = '';
+
+  try {
+    const res = await api('/api/sourcing/start', {
+      method: 'POST',
+      body: JSON.stringify({ keywords, scanLimit }),
+    });
+    sourcingStatusEl.textContent = `✅ Поиск запущен. Запросов: ${keywords.length}. Обновите страницу когда завершит.`;
+    showToast(`Sourcing запущен: ${keywords.length} запросов`, 'good');
+  } catch (e) {
+    sourcingStatusEl.textContent = `❌ Ошибка: ${e.message}`;
+    showToast(`Ошибка sourcing: ${e.message}`, 'bad');
+  } finally {
+    sourcingStartBtn.disabled = false;
+  }
+});
 
 approvedModalEl?.querySelector('.btn-copy-approved')?.addEventListener('click', async () => {
   const pre = approvedModalEl.querySelector('.modal-approved-text');

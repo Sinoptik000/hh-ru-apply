@@ -491,6 +491,82 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, 200, { ok: true });
   }
 
+  // --- Sourcing endpoints ---
+
+  if (req.method === 'GET' && pathname === '/api/sourcing/load-keywords') {
+    try {
+      const prefs = loadPreferences();
+      const keywordsFile = process.env.HH_KEYWORDS_FILE || path.join(ROOT, 'config', 'search-keywords.txt');
+      if (!fs.existsSync(keywordsFile)) {
+        return sendJson(res, 200, { keywords: [] });
+      }
+      const raw = fs.readFileSync(keywordsFile, 'utf-8');
+      const keywords = raw
+        .split('\n')
+        .map(s => s.trim())
+        .filter(s => s && !s.startsWith('#'));
+      return sendJson(res, 200, { keywords, file: path.relative(ROOT, keywordsFile) });
+    } catch (e) {
+      return sendJson(res, 500, { error: e.message });
+    }
+  }
+
+  if (req.method === 'POST' && pathname === '/api/sourcing/start') {
+    let body;
+    try {
+      body = JSON.parse(await readBody(req));
+    } catch {
+      return sendJson(res, 400, { error: 'Invalid JSON' });
+    }
+    const { keywords, scanLimit } = body;
+    if (!Array.isArray(keywords) || !keywords.length) {
+      return sendJson(res, 400, { error: 'Нужен массив keywords' });
+    }
+
+    const scriptPath = path.join(ROOT, 'scripts', 'scan-telegram.mjs');
+    if (!fs.existsSync(scriptPath)) {
+      return sendJson(res, 500, { error: 'Скрипт scan-telegram.mjs не найден' });
+    }
+
+    // Запускаем последовательно для каждого ключа
+    const logFile = path.join(DATA_DIR, 'sourcing.log');
+    const header = `\n======== ${new Date().toISOString()} sourcing started ========\n`;
+    fs.appendFileSync(logFile, header, 'utf-8');
+
+    const logFd = fs.openSync(logFile, 'a');
+    const env = { ...process.env };
+    if (scanLimit) env.HH_SCAN_LIMIT = String(scanLimit);
+
+    let child;
+    try {
+      const args = [scriptPath, '--web', ...keywords];
+      child = spawn(process.execPath, args, {
+        cwd: ROOT,
+        detached: true,
+        stdio: ['ignore', logFd, logFd],
+        env,
+      });
+    } finally {
+      fs.closeSync(logFd);
+    }
+
+    child.on('exit', (code, signal) => {
+      const line = `\n--- sourcing exit code=${code} signal=${signal || ''} at ${new Date().toISOString()} ---\n`;
+      try {
+        fs.appendFileSync(logFile, line, 'utf-8');
+      } catch { /* ignore */ }
+    });
+
+    child.unref();
+
+    return sendJson(res, 200, {
+      ok: true,
+      pid: child.pid,
+      keywordsCount: keywords.length,
+      logFile: path.relative(ROOT, logFile),
+    });
+  }
+
   if (pathname.startsWith('/api')) {
     return sendJson(res, 404, { error: 'Неизвестный путь API', path: pathname });
   }
