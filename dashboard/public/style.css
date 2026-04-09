@@ -456,13 +456,20 @@ h1 {
   font-size: 0.82rem;
 }
 
+.workplace-badges {
+  display: inline-flex;
+  gap: 0.35em;
+  flex-wrap: wrap;
+}
+
 .workplace-badge {
   display: inline-block;
-  padding: 0.2em 0.6em;
+  padding: 0.15em 0.5em;
   border-radius: 4px;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 .workplace-badge[data-workplace-type="удаленка"] {

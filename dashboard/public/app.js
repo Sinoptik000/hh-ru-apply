@@ -608,11 +608,18 @@ function renderCard(item) {
   ].filter(Boolean);
   meta.textContent = parts.join(' · ');
 
-  // Workplace type badge
-  const workplaceBadge = node.querySelector('.workplace-badge');
-  const workplaceType = item.workplaceType || 'не указано';
-  workplaceBadge.setAttribute('data-workplace-type', workplaceType);
-  workplaceBadge.textContent = workplaceType.charAt(0).toUpperCase() + workplaceType.slice(1);
+  // Workplace type badges (может быть несколько)
+  const workplaceBadges = node.querySelector('.workplace-badges');
+  workplaceBadges.innerHTML = '';
+  const workplaceTypes = item.workplaceType || ['не указано'];
+  const types = Array.isArray(workplaceTypes) ? workplaceTypes : [workplaceTypes];
+  for (const wt of types) {
+    const badge = document.createElement('span');
+    badge.className = 'workplace-badge';
+    badge.setAttribute('data-workplace-type', wt);
+    badge.textContent = wt.charAt(0).toUpperCase() + wt.slice(1);
+    workplaceBadges.appendChild(badge);
+  }
 
   node.querySelector('.summary').textContent = item.geminiSummary || '';
   const risks = node.querySelector('.risks');

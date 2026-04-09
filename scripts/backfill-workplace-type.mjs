@@ -25,18 +25,13 @@ async function main() {
 
   let updated = 0;
   for (const item of queue) {
-    if (item.workplaceType) continue; // Уже есть
-
-    // Собираем доступный текст для анализа
-    const textBlob = [
+    item.workplaceType = determineWorkplaceType(item.employment || '', [
       item.title || '',
       item.company || '',
-      item.salaryRaw || '',
       item.descriptionPreview || '',
       item.remoteNote || '',
-    ].join(' ').toLowerCase();
-
-    item.workplaceType = determineWorkplaceType(textBlob);
+      item.descriptionForLlm || '',
+    ].join(' ').toLowerCase());
     updated++;
   }
 
