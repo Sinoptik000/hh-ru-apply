@@ -14,6 +14,17 @@ let draftModalState = null;
 /** @type {ReturnType<typeof setInterval> | null} */
 let applyLogRefreshTimer = null;
 
+/** Счётчики по статусам */
+let vacancyCounts = { pending: 0, approved: 0, rejected: 0 };
+
+/** Кэш записей по статусам */
+let cachedItems = { pending: null, approved: null, rejected: null };
+
+/** Сброс кэша — требует перезагрузки при следующем load() */
+function invalidateCache() {
+  cachedItems = { pending: null, approved: null, rejected: null };
+}
+
 // Проверяем активный sourcing при загрузке страницы
 checkActiveSourcing();
 
@@ -282,6 +293,7 @@ function openDraftModal(item) {
         body: JSON.stringify({ id: item.id, variants: draftModalState.variants }),
       });
       showToast('Правки сохранены', 'good');
+      invalidateCache();
       await load();
     } catch (e) {
       alert(e.message);
@@ -305,6 +317,7 @@ function openDraftModal(item) {
       });
       showToast('Письмо утверждено', 'good');
       closeDraftModal();
+      invalidateCache();
       await load();
     } catch (e) {
       alert(e.message);
@@ -322,6 +335,7 @@ function openDraftModal(item) {
       });
       showToast('Черновик отклонён', 'neutral');
       closeDraftModal();
+      invalidateCache();
       await load();
     } catch (e) {
       alert(e.message);
@@ -532,6 +546,7 @@ function bindDismiss(node, item) {
         body: JSON.stringify({ id: item.id }),
       });
       showToast('Запись удалена из очереди', 'neutral');
+      invalidateCache();
       await load();
     } catch (e) {
       alert(e.message);
@@ -621,6 +636,18 @@ function renderCard(item) {
     workplaceBadges.appendChild(badge);
   }
 
+  // Language row
+  const langRow = node.querySelector('.language-row');
+  const langBadge = node.querySelector('.language-badge');
+  const englishLevel = item.englishLevel;
+  if (englishLevel) {
+    langRow.hidden = false;
+    langBadge.setAttribute('data-level', englishLevel);
+    langBadge.textContent = englishLevel;
+  } else {
+    langRow.hidden = true;
+  }
+
   node.querySelector('.summary').textContent = item.geminiSummary || '';
   const risks = node.querySelector('.risks');
   risks.textContent = item.geminiRisks ? `Нюансы: ${item.geminiRisks}` : '';
@@ -651,6 +678,7 @@ function renderCard(item) {
       try {
         await requestCoverLetterGenerate(item.id, false);
         showToast('Новые варианты готовы', 'good');
+        invalidateCache();
         await load();
       } catch (e) {
         if (e.status === 409) {
@@ -661,6 +689,7 @@ function renderCard(item) {
             try {
               await requestCoverLetterGenerate(item.id, true);
               showToast('Новые варианты готовы', 'good');
+              invalidateCache();
               await load();
             } catch (e2) {
               alert(e2.message);
@@ -725,6 +754,7 @@ function renderCard(item) {
       try {
         await requestCoverLetterGenerate(item.id, false);
         showToast('Сопроводительное сгенерировано', 'good');
+        invalidateCache();
         await load();
       } catch (e) {
         if (e.status === 409) {
@@ -735,6 +765,7 @@ function renderCard(item) {
             try {
               await requestCoverLetterGenerate(item.id, true);
               showToast('Новые варианты готовы', 'good');
+              invalidateCache();
               await load();
             } catch (e2) {
               alert(e2.message);
@@ -766,6 +797,7 @@ function renderCard(item) {
         } else {
           showToast('Текст вакансии обновлён с hh.ru', 'good');
         }
+        invalidateCache();
         await load();
       } catch (e) {
         alert(e.message);
@@ -792,6 +824,7 @@ function renderCard(item) {
         } else {
           showToast('Сохранено: не подходит', 'bad');
         }
+        invalidateCache();
         await load();
       } catch (e) {
         alert(e.message);
@@ -811,11 +844,16 @@ function renderCard(item) {
 
 function syncVacancyTabs() {
   vacancyTabsEl.querySelectorAll('.tab').forEach((b) => {
-    b.classList.toggle('active', b.dataset.status === currentStatus);
+    const status = b.dataset.status;
+    const count = vacancyCounts[status] ?? 0;
+    const baseLabel = b.dataset.baseLabel || b.textContent.replace(/\s*\(\d+\)\s*$/, '');
+    if (!b.dataset.baseLabel) b.dataset.baseLabel = baseLabel;
+    b.textContent = `${baseLabel} (${count})`;
+    b.classList.toggle('active', status === currentStatus);
   });
 }
 
-async function load() {
+async function load(forceRefresh = false) {
   listEl.innerHTML = '';
   try {
     try {
@@ -833,12 +871,49 @@ async function load() {
       scoreWeights = { vacancy: 0.35, cvMatch: 0.65 };
     }
 
-    const { items } = await api(`/api/vacancies?status=${encodeURIComponent(currentStatus)}`);
+    // Если есть кэш для текущего статуса и не требуется обновление — используем его
+    if (!forceRefresh && cachedItems[currentStatus] !== null) {
+      const items = cachedItems[currentStatus];
+      vacancyCounts[currentStatus] = items.length;
+      // Обновляем счётчики для остальных статусов из кэша если есть
+      for (const status of ['pending', 'approved', 'rejected']) {
+        if (cachedItems[status] !== null && status !== currentStatus) {
+          vacancyCounts[status] = cachedItems[status].length;
+        }
+      }
+      if (!items.length) {
+        listEl.innerHTML = '<p class="empty">Пусто.</p>';
+        syncVacancyTabs();
+        return;
+      }
+      items.forEach((it) => listEl.appendChild(renderCard(it)));
+      syncVacancyTabs();
+      return;
+    }
+
+    // Загружаем все записи параллельно для подсчёта + отображения
+    const allData = await Promise.all(
+      ['pending', 'approved', 'rejected'].map((status) =>
+        api(`/api/vacancies?status=${encodeURIComponent(status)}`).then(({ items }) => ({ status, items }))
+      )
+    );
+
+    // Обновляем кэш и счётчики
+    for (const { status, items } of allData) {
+      cachedItems[status] = items;
+      vacancyCounts[status] = items.length;
+    }
+
+    // Отображаем текущую вкладку
+    const currentData = allData.find((d) => d.status === currentStatus);
+    const { items } = currentData;
     if (!items.length) {
       listEl.innerHTML = '<p class="empty">Пусто.</p>';
+      syncVacancyTabs();
       return;
     }
     items.forEach((it) => listEl.appendChild(renderCard(it)));
+    syncVacancyTabs();
   } catch (e) {
     listEl.innerHTML = `<p class="err">${e.message}</p>`;
   }
@@ -849,7 +924,20 @@ vacancyTabsEl.querySelectorAll('.tab').forEach((btn) => {
     vacancyTabsEl.querySelectorAll('.tab').forEach((b) => b.classList.remove('active'));
     btn.classList.add('active');
     currentStatus = btn.dataset.status;
-    load();
+    // Если данные уже в кэше — отображаем сразу, иначе загружаем
+    if (cachedItems[currentStatus] !== null) {
+      listEl.innerHTML = '';
+      const items = cachedItems[currentStatus];
+      if (!items.length) {
+        listEl.innerHTML = '<p class="empty">Пусто.</p>';
+        syncVacancyTabs();
+        return;
+      }
+      items.forEach((it) => listEl.appendChild(renderCard(it)));
+      syncVacancyTabs();
+    } else {
+      load();
+    }
   });
 });
 

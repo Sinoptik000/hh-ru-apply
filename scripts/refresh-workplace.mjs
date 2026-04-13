@@ -52,15 +52,35 @@ async function main() {
         break;
       }
 
-      const employment = await page.evaluate(() => {
+      const result = await page.evaluate(() => {
         const t = s => document.querySelector(s)?.textContent?.replace(/\s+/g, ' ')?.trim() || '';
-        return t('[data-qa="work-formats-text"]') || t('[data-qa="vacancy-employment-mode"]') || t('[data-qa="vacancy-view-employment-mode"]') || '';
+        const employment = t('[data-qa="work-formats-text"]') || t('[data-qa="vacancy-employment-mode"]') || t('[data-qa="vacancy-view-employment-mode"]') || '';
+
+        // Parse languages
+        let languages = [];
+        const langMatch = document.body.textContent.match(/(Английский|English|Немецкий|Deutsch|Французский|Français|Китайский|Chinese|Испанский|Spanish)\s*—\s*(\S+(?:\s*—\s*\S+)?)/i);
+        if (langMatch) {
+          const langName = langMatch[1].trim();
+          const levelRaw = langMatch[2].trim();
+          const levelMatch = levelRaw.match(/(A[12]|B[12]|C[12]|Advanced|Proficiency|Native|Носитель|Средний|Выше среднего|Базовый|Продвинутый|Свободный|Не владею)/i);
+          if (levelMatch) {
+            languages.push({ name: langName, level: levelMatch[1].trim() });
+          } else {
+            languages.push({ name: langName, level: levelRaw.split(/[—\s]+/).find(s => /[A-Z0-9]/i.test(s)) || levelRaw });
+          }
+        }
+
+        const englishLevel = languages.find(l => /английск|english/i.test(l.name || ''))?.level || null;
+        return { employment, languages, englishLevel };
       });
 
-      item.employment = employment || '';
-      item.workplaceType = determineWorkplaceType(employment || '', '');
+      item.employment = result.employment || '';
+      item.workplaceType = determineWorkplaceType(result.employment || '', '');
+      item.languages = result.languages || [];
+      item.englishLevel = result.englishLevel || null;
 
-      console.log(`  → employment: "${employment}" → ${item.workplaceType.join(', ')}`);
+      const langInfo = result.englishLevel ? ` | EN: ${result.englishLevel}` : '';
+      console.log(`  → employment: "${result.employment}" → ${item.workplaceType.join(', ')}${langInfo}`);
       updated++;
 
       // Сохраняем каждые 5 записей на случай обрыва

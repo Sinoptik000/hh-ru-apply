@@ -492,6 +492,64 @@ h1 {
   color: #999;
 }
 
+/* Language badge */
+.language-row {
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.language-label {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.language-badge {
+  display: inline-block;
+  padding: 0.15em 0.5em;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* Зелёный: A1, A2, B1 */
+.language-badge[data-level="A1"],
+.language-badge[data-level="A2"],
+.language-badge[data-level="B1"] {
+  background: #1b3a2a;
+  color: #6ee7a0;
+}
+
+/* Жёлтый: B2 */
+.language-badge[data-level="B2"] {
+  background: #3a2f1b;
+  color: #e7c96e;
+}
+
+/* Красный: C1, C2, Advanced */
+.language-badge[data-level="C1"],
+.language-badge[data-level="C2"],
+.language-badge[data-level="Advanced"],
+.language-badge[data-level="Proficiency"],
+.language-badge[data-level="Native"],
+.language-badge[data-level="Носитель"],
+.language-badge[data-level="Свободный"],
+.language-badge[data-level="Продвинутый"] {
+  background: #3a1b1b;
+  color: #e76e6e;
+}
+
+/* Серый: Базовый, Средний, Не владею */
+.language-badge[data-level="Средний"],
+.language-badge[data-level="Базовый"],
+.language-badge[data-level="Не владею"] {
+  background: #2a2a2e;
+  color: #999;
+}
+
 .summary,
 .risks {
   margin: 0.4rem 0;

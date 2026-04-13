@@ -30,6 +30,7 @@ const DEFAULT_KEYWORDS_FILE = path.join(ROOT, 'config', 'search-keywords.txt');
 const headless = process.env.HH_HEADLESS === '1';
 const skipLlm =
   process.argv.includes('--skip-llm') || process.argv.includes('--skip-gemini');
+const stayOpen = process.argv.includes('--stay-open');
 const sessionLimit = Math.min(40, Math.max(1, Number(process.env.HH_SESSION_LIMIT ?? process.env.HH_MAX_TOTAL ?? 7) || 7));
 const perKeyLimit = Math.min(30, Math.max(1, Number(process.env.HH_PER_KEYWORD_LIMIT || 8) || 8));
 
@@ -136,6 +137,18 @@ async function main() {
       process.exit(1);
     }
 
+    if (stayOpen) {
+      console.log('🔧 Режим --stay-open: браузер открыт, сбор вакансий будет запущен.');
+      console.log('Для запуска сбора нажмите Enter в терминале (или подождите 5 секунд).');
+      await new Promise((resolve) => {
+        const timeout = setTimeout(resolve, 5000);
+        process.stdin.once('data', () => {
+          clearTimeout(timeout);
+          resolve();
+        });
+      });
+    }
+
     const seenIds = knownVacancyIds();
     const rejectedIds = loadRejectedVacancyIds();
     const urls = [];
@@ -239,7 +252,9 @@ async function main() {
         remoteNote: filter.remoteReason,
         salaryNote: filter.salaryReason,
         employment: parsed.employment,
-        workplaceType: filter.workplaceType || 'не указано',
+        workplaceType: filter.workplaceType || ['не указано'],
+        languages: parsed.languages || [],
+        englishLevel: (parsed.languages || []).find(l => /английск|english/i.test(l.name || ''))?.level || null,
         descriptionPreview: parsed.description.slice(0, 600),
         descriptionForLlm: parsed.description.slice(0, 6000),
         llmProvider: 'openrouter',
@@ -267,8 +282,20 @@ async function main() {
     }
 
     console.log(`\nГотово. Новых записей в очереди: ${added}. Запустите: npm run dashboard`);
+
+    if (stayOpen) {
+      console.log('Браузер открыт. Закройте окно для завершения.');
+      await new Promise((resolve) => {
+        ctx.on('close', resolve);
+        process.on('SIGINT', async () => { await ctx.close(); resolve(); });
+        process.on('SIGTERM', async () => { await ctx.close(); resolve(); });
+      });
+      console.log('Браузер закрыт.');
+    }
   } finally {
-    await ctx.close();
+    if (!stayOpen) {
+      await ctx.close();
+    }
   }
 }
 
