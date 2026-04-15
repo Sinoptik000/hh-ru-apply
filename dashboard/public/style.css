@@ -1266,17 +1266,18 @@ h1 {
   font-family: ui-monospace, monospace;
 }
 
-/* Search bar */
+/* Search bar wrapper */
+.search-bar-wrap {
+  padding: 0 1.5rem 0.75rem;
+}
+
 .search-bar {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.75rem;
   position: relative;
   max-width: 52rem;
-  padding: 0 1.5rem;
-  margin-left: auto;
-  margin-right: auto;
+  margin: 0 auto;
 }
 
 .vacancy-search {
