@@ -6,7 +6,43 @@ https://github.com/Sinoptik000/hh-ru-apply?tab=readme-ov-file#:~:text=%D1%81%D1%
 npm run dashboard
 
 Вход на hh.ru с сохранением браузерного профиля
-npm run login
+npm run login --stay-open
 
 Сканирование вакансий из Telegram-каналов через бота
 npm run scan-tg
+
+Флаги:
+
+--stay-open — не закрывать браузер
+--dry-run — открыть чат, но не вставлять письмо
+--no-submit — открыть форму отклика без отправки
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

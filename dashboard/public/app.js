@@ -4,6 +4,7 @@ const tpl = document.getElementById('card-tpl');
 const vacancyTabsEl = document.querySelector('.vacancy-tabs');
 
 let currentStatus = 'pending';
+let currentSearchQuery = '';
 
 /** Нормализованные веса для подсказки к скору (как в lib/openrouter-score.mjs) */
 let scoreWeights = { vacancy: 0.35, cvMatch: 0.65 };
@@ -986,6 +987,53 @@ if (item.url) {
 return node;
 }
 
+function onSearchInput(e) {
+  const query = e.target.value.trim();
+  currentSearchQuery = query;
+  const clearBtn = document.getElementById('vacancy-search-clear');
+  if (clearBtn) clearBtn.hidden = !query;
+  renderVacancyList();
+}
+
+function clearSearch() {
+  currentSearchQuery = '';
+  const input = document.getElementById('vacancy-search');
+  if (input) input.value = '';
+  const clearBtn = document.getElementById('vacancy-search-clear');
+  if (clearBtn) clearBtn.hidden = true;
+  renderVacancyList();
+}
+
+function renderVacancyList() {
+  const items = cachedItems[currentStatus];
+  if (items === null) return;
+
+  listEl.innerHTML = '';
+
+  let filtered = items;
+  if (currentSearchQuery) {
+    const q = currentSearchQuery.toLowerCase();
+    filtered = items.filter((v) => {
+      const titleMatch = (v.title || '').toLowerCase().includes(q);
+      const companyMatch = (v.company || '').toLowerCase().includes(q);
+      const tagsMatch = (v.geminiTags || []).some((t) => t.toLowerCase().includes(q));
+      const queryMatch = (v.searchQuery || '').toLowerCase().includes(q);
+      return titleMatch || companyMatch || tagsMatch || queryMatch;
+    });
+  }
+
+  if (!filtered.length) {
+    listEl.innerHTML = currentSearchQuery
+      ? '<p class="empty">Ничего не найдено.</p>'
+      : '<p class="empty">Пусто.</p>';
+    syncVacancyTabs();
+    return;
+  }
+
+  filtered.forEach((it) => listEl.appendChild(renderCard(it)));
+  syncVacancyTabs();
+}
+
 function syncVacancyTabs() {
   vacancyTabsEl.querySelectorAll('.tab').forEach((b) => {
     const status = b.dataset.status;
@@ -1025,14 +1073,8 @@ async function load(forceRefresh = false) {
           vacancyCounts[status] = cachedItems[status].length;
         }
       }
-      if (!items.length) {
-        listEl.innerHTML = '<p class="empty">Пусто.</p>';
-        syncVacancyTabs();
-        return;
-      }
-      items.forEach((it) => listEl.appendChild(renderCard(it)));
-      syncVacancyTabs();
-      return;
+renderVacancyList();
+return;
     }
 
     // Загружаем все записи параллельно для подсчёта + отображения
@@ -1049,15 +1091,9 @@ async function load(forceRefresh = false) {
     }
 
     // Отображаем текущую вкладку
-    const currentData = allData.find((d) => d.status === currentStatus);
-    const { items } = currentData;
-    if (!items.length) {
-      listEl.innerHTML = '<p class="empty">Пусто.</p>';
-      syncVacancyTabs();
-      return;
-    }
-    items.forEach((it) => listEl.appendChild(renderCard(it)));
-    syncVacancyTabs();
+const currentData = allData.find((d) => d.status === currentStatus);
+const { items } = currentData;
+renderVacancyList();
   } catch (e) {
     listEl.innerHTML = `<p class="err">${e.message}</p>`;
   }
@@ -1068,24 +1104,21 @@ vacancyTabsEl.querySelectorAll('.tab').forEach((btn) => {
     vacancyTabsEl.querySelectorAll('.tab').forEach((b) => b.classList.remove('active'));
     btn.classList.add('active');
     currentStatus = btn.dataset.status;
-    // Если данные уже в кэше — отображаем сразу, иначе загружаем
-    if (cachedItems[currentStatus] !== null) {
-      listEl.innerHTML = '';
-      const items = cachedItems[currentStatus];
-      if (!items.length) {
-        listEl.innerHTML = '<p class="empty">Пусто.</p>';
-        syncVacancyTabs();
-        return;
-      }
-      items.forEach((it) => listEl.appendChild(renderCard(it)));
-      syncVacancyTabs();
-    } else {
-      load();
-    }
+// Если данные уже в кэше — отображаем сразу, иначе загружаем
+  if (cachedItems[currentStatus] !== null) {
+    renderVacancyList();
+  } else {
+    load();
+  }
   });
 });
 
 syncVacancyTabs();
+
+const searchInput = document.getElementById('vacancy-search');
+const clearBtn = document.getElementById('vacancy-search-clear');
+if (searchInput) searchInput.addEventListener('input', onSearchInput);
+if (clearBtn) clearBtn.addEventListener('click', clearSearch);
 
 // Проверка активного sourcing при загрузке
 async function checkActiveSourcing() {

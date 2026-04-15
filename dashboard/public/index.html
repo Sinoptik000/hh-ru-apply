@@ -14,7 +14,7 @@
           <div class="sourcing-group">
             <div class="keywords-dropdown">
               <button type="button" class="btn btn-keywords" title="Просмотреть ключевые слова">
-                📝 Названия
+                📝 Фильтры
               </button>
               <div class="keywords-list" hidden>
                 <div class="keywords-header">
@@ -46,12 +46,22 @@
           </button>
         </div>
       </div>
-      <div class="tabs vacancy-tabs">
-        <button type="button" data-status="pending" class="tab active">На проверке</button>
-        <button type="button" data-status="approved" class="tab">Подходят</button>
-        <button type="button" data-status="rejected" class="tab">Отклонённые</button>
-      </div>
-    </header>
+<div class="tabs vacancy-tabs">
+<button type="button" data-status="pending" class="tab active">На проверке</button>
+<button type="button" data-status="approved" class="tab">Подходят</button>
+<button type="button" data-status="rejected" class="tab">Отклонённые</button>
+</div>
+<div class="search-bar">
+  <input
+    type="text"
+    id="vacancy-search"
+    class="vacancy-search"
+    placeholder="Поиск по вакансиям..."
+    autocomplete="off"
+  />
+  <button type="button" id="vacancy-search-clear" class="search-clear" title="Очистить" hidden>×</button>
+</div>
+</header>
     <main id="list"></main>
     <template id="card-tpl">
       <article class="card">
