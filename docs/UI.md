@@ -64,20 +64,33 @@
 
 ---
 
-### Search Bar (`.search-bar`)
+### Tabs + Search Row (`.tabs-row`)
 
-**Расположение:** под tabs, над списком вакансий.
+**Расположение:** под header, перед списком вакансий. Tabs и search bar на одном уровне, справа от tabs.
 
-**Ширина:** ограничена `max-width: 52rem`, выровнена по центру с `padding: 0 1.5rem` (совпадает с отступами карточек).
+**Структура:**
+```
+[На проверке (12)] [Подходят (5)] [Отклонённые (3)]  [🔍 Поиск... ×]
+```
+
+**Стили:**
+- Flex-контейнер с `gap: 0.75rem`, `flex-wrap: wrap`
+- Высота строки ~40px, центрирование по вертикали
+- `padding: 0 1.5rem 0.75rem` — отступы совпадают с карточками
+
+### Search Bar (inline, `.search-bar-wrap`)
+
+**Расположение:** справа от tabs в одном ряду.
 
 **Элементы:**
-- `#vacancy-search` — текстовое поле ввода (flex: 1), placeholder "Поиск по вакансиям..."
+- `#vacancy-search` — текстовое поле ввода, placeholder "Поиск..."
 - `#vacancy-search-clear` — кнопка "×", скрыта по умолчанию, появляется при вводе текста
 
 **Стили:**
-- Поле: padding 0.45rem 2rem 0.45rem 0.75rem, flex: 1
+- `flex: 1`, `min-width: 12rem`, `max-width: 24rem`
+- Поле: padding 0.35rem 1.75rem 0.35rem 0.6rem, border-radius 6px
 - Фокус: `border-color: var(--accent)`, тень `rgba(124, 183, 255, 0.15)`
-- Кнопка очистки: позиция absolute справа, появляется при `hidden=false`
+- Кнопка очистки: позиция absolute справа 0.5rem
 
 **Поведение:**
 - При вводе текста вызывается `onSearchInput()` → `renderVacancyList()`

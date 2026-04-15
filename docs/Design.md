@@ -126,31 +126,55 @@ animation: pulse-highlight 0.6s ease-in-out 3;
 
 ```css
 flex: 1;
-padding: 0.45rem 2rem 0.45rem 0.75rem;
-border-radius: 8px;
+width: 100%;
+padding: 0.35rem 1.75rem 0.35rem 0.6rem;
+border-radius: 6px;
 border: 1px solid var(--border);
 background: var(--panel);
 color: var(--text);
-font-size: 0.92rem;
+font-size: 0.88rem;
 ```
 
-**Контейнер** (`.search-bar`):
+**Контейнер** (`.search-bar-wrap`):
 ```css
 display: flex;
 align-items: center;
-gap: 0.5rem;
-margin-bottom: 0.75rem;
+gap: 0.35rem;
 position: relative;
-max-width: 52rem;
-padding: 0 1.5rem;
-margin-left: auto;
-margin-right: auto;
+flex: 1;
+min-width: 12rem;
+max-width: 24rem;
 ```
 
 **Фокус:**
 ```css
 border-color: var(--accent);
 box-shadow: 0 0 0 2px rgba(124, 183, 255, 0.15);
+```
+
+### Табы (`.tab`)
+
+**Неактивный:**
+```css
+background: var(--panel);
+border: 1px solid var(--border);
+color: var(--muted);
+```
+
+**Активный:**
+```css
+color: var(--text);
+border-color: var(--accent);
+```
+
+### Tabs + Search Row (`.tabs-row`)
+
+```css
+display: flex;
+align-items: center;
+gap: 0.75rem;
+flex-wrap: wrap;
+padding: 0 1.5rem 0.75rem;
 ```
 
 ### Табы (`.tab`)
