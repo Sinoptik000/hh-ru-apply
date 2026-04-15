@@ -201,6 +201,91 @@ h1 {
   text-align: center;
 }
 
+/* Add Vacancy Progress */
+.add-vacancy-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.add-vacancy-steps {
+  display: flex;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  color: #8892a4;
+}
+
+.add-step {
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  background: #1e2633;
+  border: 1px solid #2a3548;
+  white-space: nowrap;
+  transition: all 0.25s ease;
+}
+
+.add-step.active {
+  background: #2a3548;
+  border-color: #4CAF50;
+  color: #6ee7a0;
+}
+
+.add-step.done {
+  background: #1b3a2a;
+  border-color: #2d5c40;
+  color: #6bcf7f;
+}
+
+.add-step.error {
+  background: #3a1b1b;
+  border-color: #5c2d2d;
+  color: #f08080;
+}
+
+.add-vacancy-progress-bar {
+  width: 80px;
+  height: 6px;
+  background: #1e2633;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid #3d4f6a;
+}
+
+.add-vacancy-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4CAF50, #8BC34A);
+  transition: width 0.3s ease;
+  border-radius: 2px;
+}
+
+.add-vacancy-progress-text {
+  font-size: 0.75rem;
+  color: #8892a4;
+  font-weight: 600;
+  min-width: 50px;
+  text-align: center;
+}
+
+.btn-add-vacancy {
+  font-size: 0.9rem;
+  padding: 0.4rem 0.85rem;
+  background: #2a3548;
+  border: 1px solid #3d4f6a;
+  color: #6ee7a0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-add-vacancy:hover {
+  background: #323f56;
+}
+
+.btn-add-vacancy:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .view-switch {
   display: flex;
   gap: 0.5rem;
@@ -272,6 +357,18 @@ h1 {
   border-radius: 12px;
   padding: 1rem 2.25rem 1rem 1.1rem;
   margin-bottom: 1rem;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card--new-highlight {
+  border-color: #4CAF50;
+  box-shadow: 0 0 16px rgba(76, 175, 80, 0.35);
+  animation: pulse-highlight 0.6s ease-in-out 3;
+}
+
+@keyframes pulse-highlight {
+  0%, 100% { box-shadow: 0 0 16px rgba(76, 175, 80, 0.35); }
+  50% { box-shadow: 0 0 28px rgba(76, 175, 80, 0.6); }
 }
 
 .card-dismiss {

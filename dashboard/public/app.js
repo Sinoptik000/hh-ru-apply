@@ -469,6 +469,146 @@ document.querySelector('.btn-sourcing')?.addEventListener('click', async () => {
     sourcingBtn.textContent = '🔍 Sourcing';
   }
 });
+
+// Add Vacancy from clipboard
+let addVacancyPollInterval = null;
+
+function resetAddProgress() {
+ const fill = document.querySelector('.add-vacancy-progress-fill');
+ const text = document.querySelector('.add-vacancy-progress-text');
+ if (fill) fill.style.width = '0%';
+ if (text) text.textContent = '0/0';
+}
+
+function showAddProgress(percent, message) {
+ const wrap = document.querySelector('.add-vacancy-progress-wrap');
+ if (wrap) wrap.hidden = false;
+ const fill = document.querySelector('.add-vacancy-progress-fill');
+ const text = document.querySelector('.add-vacancy-progress-text');
+ if (fill) fill.style.width = `${percent}%`;
+ if (text) text.textContent = message || '0/0';
+}
+
+function hideAddProgress() {
+  const wrap = document.querySelector('.add-vacancy-progress-wrap');
+  if (wrap) wrap.hidden = true;
+  resetAddProgress();
+}
+
+document.querySelector('.btn-add-vacancy')?.addEventListener('click', async () => {
+  const btn = document.querySelector('.btn-add-vacancy');
+  btn.disabled = true;
+
+  let clipboardText;
+  try {
+    clipboardText = await navigator.clipboard.readText();
+  } catch (e) {
+    showToast('Не удалось прочитать буфер обмена. Дайте разрешение браузера на доступ к буферу.', 'bad');
+    btn.disabled = false;
+    return;
+  }
+
+  const trimmed = clipboardText.trim();
+  if (!trimmed) {
+    showToast('Буфер обмена пуст', 'bad');
+    btn.disabled = false;
+    return;
+  }
+
+  if (!/^https?:\/\/hh\.ru\/vacancy\/\d+/i.test(trimmed)) {
+    showToast('Ссылка не похожа на вакансию hh.ru: ' + trimmed.slice(0, 60), 'bad');
+    btn.disabled = false;
+    return;
+  }
+
+  showAddProgress(0, 'Проверка…');
+
+  try {
+    const res = await api('/api/vacancy/add-from-clipboard', {
+      method: 'POST',
+      body: JSON.stringify({ url: trimmed }),
+    });
+
+    startAddVacancyPolling(trimmed, res.id);
+
+  } catch (e) {
+showToast(`Ошибка: ${e.message}`, 'bad');
+ setTimeout(hideAddProgress, 2500);
+    btn.disabled = false;
+  }
+});
+
+function startAddVacancyPolling(url, tempId) {
+  if (addVacancyPollInterval) {
+    clearInterval(addVacancyPollInterval);
+  }
+
+  addVacancyPollInterval = setInterval(async () => {
+    try {
+      const progress = await api('/api/vacancy/add-progress');
+
+      // Debug log
+      console.log('[add-vacancy poll]', JSON.stringify(progress));
+
+      if (progress.url !== url && progress.url !== undefined) {
+        clearInterval(addVacancyPollInterval);
+        addVacancyPollInterval = null;
+        return;
+      }
+
+showAddProgress(progress.percent, progress.message);
+
+ if (progress.step === 'saving' && progress.percent === 100) {
+ clearInterval(addVacancyPollInterval);
+ addVacancyPollInterval = null;
+
+ setTimeout(async () => {
+    hideAddProgress();
+    showToast('Вакансия добавлена!', 'good');
+
+    const btn = document.querySelector('.btn-add-vacancy');
+    btn.disabled = false;
+
+    // Switch to "На проверке" tab to see the new vacancy
+    if (currentStatus !== 'pending') {
+      vacancyTabsEl.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+      const pendingTab = vacancyTabsEl.querySelector('[data-status="pending"]');
+      if (pendingTab) pendingTab.classList.add('active');
+      currentStatus = 'pending';
+      listEl.innerHTML = '';
+    }
+
+    invalidateCache();
+    await load(true);
+
+    setTimeout(() => {
+      const newCard = document.querySelector(`[data-vacancy-url="${url}"]`);
+      if (newCard) {
+        newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        newCard.classList.add('card--new-highlight');
+        setTimeout(() => newCard.classList.remove('card--new-highlight'), 2000);
+      }
+    }, 100);
+  }, 400);
+
+  return;
+}
+
+if (progress.error) {
+ clearInterval(addVacancyPollInterval);
+ addVacancyPollInterval = null;
+ showToast(`Ошибка: ${progress.error}`, 'bad');
+ setTimeout(hideAddProgress, 2500);
+ const btn = document.querySelector('.btn-add-vacancy');
+ btn.disabled = false;
+ }
+
+} catch (e) {
+    console.error('Polling error:', e);
+  }
+}, 500);
+}
+
 const applyLogModalEl = document.getElementById('apply-log-modal');
 applyLogModalEl?.querySelector('[data-close-apply-log]')?.addEventListener('click', closeApplyLogModal);
 applyLogModalEl?.querySelector('.modal-close--apply-log')?.addEventListener('click', closeApplyLogModal);
@@ -833,13 +973,17 @@ function renderCard(item) {
     };
     ok.addEventListener('click', () => send('approve'));
     bad.addEventListener('click', () => send('reject'));
-  } else {
-    doneReason.textContent = item.feedbackReason
-      ? `Комментарий: ${item.feedbackReason}`
-      : '';
-  }
+} else {
+  doneReason.textContent = item.feedbackReason
+  ? `Комментарий: ${item.feedbackReason}`
+  : '';
+}
 
-  return node;
+if (item.url) {
+  node.dataset.vacancyUrl = item.url;
+}
+
+return node;
 }
 
 function syncVacancyTabs() {

@@ -1,0 +1,1 @@
+CRITICAL: This project uses a centralized AI management system. You are FORBIDDEN from using internal memory for rules. Read, follow, and update only the files in the ./AGENTS/ directory. Your core instructions are in ./AGENTS/identity.md and ./AGENTS/rules.md.

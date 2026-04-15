@@ -553,10 +553,85 @@ const server = http.createServer(async (req, res) => {
     if (!removeVacancyRecord(id)) {
       return sendJson(res, 404, { error: 'Запись не найдена' });
     }
-    return sendJson(res, 200, { ok: true });
+return sendJson(res, 200, { ok: true });
+}
+
+// --- Add vacancy from clipboard ---
+const ADD_VACANCY_PROGRESS_FILE = path.join(DATA_DIR, 'add-vacancy-progress.json');
+
+if (req.method === 'POST' && pathname === '/api/vacancy/add-from-clipboard') {
+  let body;
+  try {
+    body = JSON.parse(await readBody(req));
+  } catch {
+    return sendJson(res, 400, { error: 'Invalid JSON' });
+  }
+  const { url } = body;
+  if (!url || typeof url !== 'string') {
+    return sendJson(res, 400, { error: 'Нужен url' });
   }
 
-  // --- Sourcing endpoints ---
+  const workerScript = path.join(ROOT, 'scripts', 'add-vacancy-worker.mjs');
+  if (!fs.existsSync(workerScript)) {
+    return sendJson(res, 500, { error: 'Скрипт add-vacancy-worker.mjs не найден' });
+  }
+
+  // Initialize progress file
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  fs.writeFileSync(ADD_VACANCY_PROGRESS_FILE, JSON.stringify({
+    url,
+    step: 'clipboard',
+    percent: 5,
+    message: 'Запуск…',
+    error: null,
+    done: false,
+    recordId: null,
+  }), 'utf-8');
+
+  // Spawn detached child process
+  const logFile = path.join(DATA_DIR, 'add-vacancy.log');
+  const header = `\n======== ${new Date().toISOString()} add-vacancy start ========\n`;
+  fs.appendFileSync(logFile, header, 'utf-8');
+  const logFd = fs.openSync(logFile, 'a');
+
+  let child;
+  try {
+    child = spawn(process.execPath, [workerScript, `--url=${url}`], {
+      cwd: ROOT,
+      detached: true,
+      stdio: ['ignore', logFd, logFd],
+      env: process.env,
+    });
+  } finally {
+    fs.closeSync(logFd);
+  }
+
+  child.on('exit', (code, signal) => {
+    const line = `\n--- add-vacancy exit code=${code} signal=${signal || ''} at ${new Date().toISOString()} ---\n`;
+    try {
+      fs.appendFileSync(logFile, line, 'utf-8');
+    } catch { /* ignore */ }
+  });
+  child.unref();
+
+  return sendJson(res, 200, { ok: true, id: url });
+}
+
+if (req.method === 'GET' && pathname === '/api/vacancy/add-progress') {
+  try {
+    if (fs.existsSync(ADD_VACANCY_PROGRESS_FILE)) {
+      const content = fs.readFileSync(ADD_VACANCY_PROGRESS_FILE, 'utf-8');
+      const progress = JSON.parse(content);
+      return sendJson(res, 200, progress);
+    }
+    // No active job
+    return sendJson(res, 200, { done: true, percent: 0 });
+  } catch (e) {
+    return sendJson(res, 200, { done: true, percent: 0, error: e.message });
+  }
+}
+
+// --- Sourcing endpoints ---
 
   if (req.method === 'GET' && pathname === '/api/sourcing/load-keywords') {
     try {
