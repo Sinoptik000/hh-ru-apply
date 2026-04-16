@@ -703,8 +703,8 @@ if (req.method === 'GET' && pathname === '/api/vacancy/add-progress') {
 
       const logFd = fs.openSync(logFile, 'a');
       const progressLogFd = fs.openSync(progressLogFile, 'a');
-      const env = { ...process.env };
-      if (scanLimit) env.HH_SCAN_LIMIT = String(scanLimit);
+const env = { ...process.env, HH_HEADLESS: '1' };
+  if (scanLimit) env.HH_SCAN_LIMIT = String(scanLimit);
 
       let child;
       try {
