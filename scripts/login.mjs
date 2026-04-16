@@ -1,6 +1,7 @@
 /**
- * Первый вход: открывается Chromium с постоянным профилем в data/session/chromium-profile.
- * Войдите на hh.ru вручную, затем нажмите Enter в терминале — профиль сохранится для npm run apply.
+ * Первый вход: открывается Chromium с постоянным профилем в data/session/chromium-automation-profile.
+ * Войдите на hh.ru вручную, затем нажмите Enter в терминале — профиль сохранится для автоматизации.
+ * Этот профиль НЕ конфликтует с обычным Chrome пользователя.
  */
 
 import { chromium } from 'playwright';
@@ -15,7 +16,7 @@ const ROOT = path.join(__dirname, '..');
 const SESSION_DIR = process.env.HH_SESSION_DIR
   ? path.resolve(process.cwd(), process.env.HH_SESSION_DIR)
   : path.join(ROOT, 'data', 'session');
-const PERSISTENT_PROFILE = path.join(SESSION_DIR, 'chromium-profile');
+const PERSISTENT_PROFILE = path.join(SESSION_DIR, 'chromium-automation-profile');
 
 function ensureDir(dir) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });

@@ -1,0 +1,1188 @@
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - heading "Очередь вакансий" [level=1] [ref=e4]
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - button "📝 Фильтры" [ref=e8] [cursor=pointer]
+          - button "➕ Добавить" [ref=e9] [cursor=pointer]
+          - button "🔍 Sourcing" [ref=e10] [cursor=pointer]
+          - generic [ref=e13]: 0/0
+        - button "Лог отклика hh" [ref=e14] [cursor=pointer]
+    - generic [ref=e15]:
+      - generic [ref=e16]:
+        - button "На проверке (48)" [ref=e26] [cursor=pointer]
+        - button "Подходят (7)" [ref=e27] [cursor=pointer]
+        - button "Отклонённые (72)" [ref=e28] [cursor=pointer]
+      - generic [ref=e20]:
+        - textbox "Поиск..." [active] [ref=e21]
+        - button "×" [ref=e22] [cursor=pointer]
+      - button "🔄" [ref=e23] [cursor=pointer]:
+        - generic [ref=e24]: 🔄
+  - main [ref=e25]:
+    - article [ref=e29]:
+      - button "Удалить из очереди" [ref=e30] [cursor=pointer]: ×
+      - generic [ref=e31]:
+        - generic [ref=e33]:
+          - generic "Итоговый балл 85, наведи для расшифровки" [ref=e35]: "85"
+          - button "Какая модель оценивала" [ref=e37] [cursor=pointer]: i
+        - link "Операционный директор (COO)" [ref=e38] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132091105
+      - generic [ref=e39]: ИП Столповская Александра Владимировна · от 130 000 до 150 000 ₽ за месяц на руки
+      - generic [ref=e40]:
+        - generic [ref=e41]: "Место работы:"
+        - generic [ref=e43]: Не указано
+      - generic [ref=e45]: "Английский:"
+      - paragraph [ref=e47]: Ты имеешь большой опыт в операционном менеджменте и стартапах, что соответствует требованиям вакансии. Твой опыт работы с CRM, Bitrix24 и другими инструментами также соответствует требованиям.
+      - paragraph [ref=e48]: "Нюансы: У тебя больше опыта в IT и финтехе, а в вакансии упор на дизайн и оформление пространств. Однако, твой опыт работы с разными отраслями и навыки операционного менеджмента могут быть полезны в этой роли. Также, тебе нужно будет продемонстрировать свои навыки работы с дизайнерами, проектными менеджерами и отделом маркетинга."
+      - generic [ref=e49]:
+        - generic [ref=e50]: операционный менеджмент
+        - generic [ref=e51]: стартапы
+        - generic [ref=e52]: CRM
+        - generic [ref=e53]: Bitrix24
+        - generic [ref=e54]: дизайн
+        - generic [ref=e55]: оформление пространств
+      - button "Отклик в браузере" [disabled] [ref=e57]
+      - button "Черновик письма" [ref=e58] [cursor=pointer]
+      - generic [ref=e59]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e60]
+        - generic [ref=e61]:
+          - generic [ref=e62]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e63] [cursor=pointer]:
+              - img [ref=e64]
+            - button "Создать сопроводительное" [ref=e66] [cursor=pointer]
+          - generic [ref=e67]:
+            - button "Подходит" [ref=e68] [cursor=pointer]
+            - button "Не подходит" [ref=e69] [cursor=pointer]
+      - paragraph
+    - article [ref=e70]:
+      - button "Удалить из очереди" [ref=e71] [cursor=pointer]: ×
+      - generic [ref=e72]:
+        - generic "Нет скора" [ref=e76]: —
+        - link "Менеджер проектов (контактный центр)" [ref=e77] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/131879880
+      - generic [ref=e78]: "билайн: ИТ"
+      - generic [ref=e79]:
+        - generic [ref=e80]: "Место работы:"
+        - generic [ref=e82]: Не указано
+      - generic [ref=e84]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e87]
+      - generic [ref=e88]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e89]
+        - generic [ref=e90]:
+          - generic [ref=e91]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e92] [cursor=pointer]:
+              - img [ref=e93]
+            - button "Создать сопроводительное" [ref=e95] [cursor=pointer]
+          - generic [ref=e96]:
+            - button "Подходит" [ref=e97] [cursor=pointer]
+            - button "Не подходит" [ref=e98] [cursor=pointer]
+      - paragraph
+    - article [ref=e99]:
+      - button "Удалить из очереди" [ref=e100] [cursor=pointer]: ×
+      - generic [ref=e101]:
+        - generic "Нет скора" [ref=e105]: —
+        - link "Управляющий директор проектов ВЭД (дирекция международного бизнеса)" [ref=e106] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/124912426
+      - generic [ref=e107]: ПАО ВТБ, Средний и малый бизнес
+      - generic [ref=e108]:
+        - generic [ref=e109]: "Место работы:"
+        - generic [ref=e111]: Не указано
+      - generic [ref=e113]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e116]
+      - generic [ref=e117]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e118]
+        - generic [ref=e119]:
+          - generic [ref=e120]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e121] [cursor=pointer]:
+              - img [ref=e122]
+            - button "Создать сопроводительное" [ref=e124] [cursor=pointer]
+          - generic [ref=e125]:
+            - button "Подходит" [ref=e126] [cursor=pointer]
+            - button "Не подходит" [ref=e127] [cursor=pointer]
+      - paragraph
+    - article [ref=e128]:
+      - button "Удалить из очереди" [ref=e129] [cursor=pointer]: ×
+      - generic [ref=e130]:
+        - generic "Нет скора" [ref=e134]: —
+        - link "Директор по управлению цепочками поставок" [ref=e135] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/131216115
+      - generic [ref=e136]: СНС, Группа компаний
+      - generic [ref=e137]:
+        - generic [ref=e138]: "Место работы:"
+        - generic [ref=e140]: Не указано
+      - generic [ref=e142]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e145]
+      - generic [ref=e146]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e147]
+        - generic [ref=e148]:
+          - generic [ref=e149]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e150] [cursor=pointer]:
+              - img [ref=e151]
+            - button "Создать сопроводительное" [ref=e153] [cursor=pointer]
+          - generic [ref=e154]:
+            - button "Подходит" [ref=e155] [cursor=pointer]
+            - button "Не подходит" [ref=e156] [cursor=pointer]
+      - paragraph
+    - article [ref=e157]:
+      - button "Удалить из очереди" [ref=e158] [cursor=pointer]: ×
+      - generic [ref=e159]:
+        - generic "Нет скора" [ref=e163]: —
+        - link "Менеджер-эксперт по стратегиии ИБ/ИТ" [ref=e164] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/131927482
+      - generic [ref=e165]: ООО ИК СИБИНТЕК
+      - generic [ref=e166]:
+        - generic [ref=e167]: "Место работы:"
+        - generic [ref=e169]: Не указано
+      - generic [ref=e171]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e174]
+      - generic [ref=e175]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e176]
+        - generic [ref=e177]:
+          - generic [ref=e178]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e179] [cursor=pointer]:
+              - img [ref=e180]
+            - button "Создать сопроводительное" [ref=e182] [cursor=pointer]
+          - generic [ref=e183]:
+            - button "Подходит" [ref=e184] [cursor=pointer]
+            - button "Не подходит" [ref=e185] [cursor=pointer]
+      - paragraph
+    - article [ref=e186]:
+      - button "Удалить из очереди" [ref=e187] [cursor=pointer]: ×
+      - generic [ref=e188]:
+        - generic "Нет скора" [ref=e192]: —
+        - link "Менеджер по продукту в сфере торгового финансирования и конверсионных операций (г. Шанхай)" [ref=e193] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/128521296
+      - generic [ref=e194]: ПАО ВТБ, Средний и малый бизнес
+      - generic [ref=e195]:
+        - generic [ref=e196]: "Место работы:"
+        - generic [ref=e198]: Не указано
+      - generic [ref=e200]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e203]
+      - generic [ref=e204]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e205]
+        - generic [ref=e206]:
+          - generic [ref=e207]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e208] [cursor=pointer]:
+              - img [ref=e209]
+            - button "Создать сопроводительное" [ref=e211] [cursor=pointer]
+          - generic [ref=e212]:
+            - button "Подходит" [ref=e213] [cursor=pointer]
+            - button "Не подходит" [ref=e214] [cursor=pointer]
+      - paragraph
+    - article [ref=e215]:
+      - button "Удалить из очереди" [ref=e216] [cursor=pointer]: ×
+      - generic [ref=e217]:
+        - generic "Нет скора" [ref=e221]: —
+        - link "Менеджер C&B (направление - мотивация персонала)" [ref=e222] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/131765601
+      - generic [ref=e223]: ООО ИК СИБИНТЕК
+      - generic [ref=e224]:
+        - generic [ref=e225]: "Место работы:"
+        - generic [ref=e227]: Не указано
+      - generic [ref=e229]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e232]
+      - generic [ref=e233]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e234]
+        - generic [ref=e235]:
+          - generic [ref=e236]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e237] [cursor=pointer]:
+              - img [ref=e238]
+            - button "Создать сопроводительное" [ref=e240] [cursor=pointer]
+          - generic [ref=e241]:
+            - button "Подходит" [ref=e242] [cursor=pointer]
+            - button "Не подходит" [ref=e243] [cursor=pointer]
+      - paragraph
+    - article [ref=e244]:
+      - button "Удалить из очереди" [ref=e245] [cursor=pointer]: ×
+      - generic [ref=e246]:
+        - generic "Нет скора" [ref=e250]: —
+        - 'link "Руководитель проектного офиса (портфель проектов: медиа, кино, образование)" [ref=e251] [cursor=pointer]':
+          - /url: https://hh.ru/vacancy/132084002
+      - generic [ref=e252]: ИП Быкова Мария Александровна
+      - generic [ref=e253]:
+        - generic [ref=e254]: "Место работы:"
+        - generic [ref=e256]: Не указано
+      - generic [ref=e258]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e261]
+      - generic [ref=e262]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e263]
+        - generic [ref=e264]:
+          - generic [ref=e265]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e266] [cursor=pointer]:
+              - img [ref=e267]
+            - button "Создать сопроводительное" [ref=e269] [cursor=pointer]
+          - generic [ref=e270]:
+            - button "Подходит" [ref=e271] [cursor=pointer]
+            - button "Не подходит" [ref=e272] [cursor=pointer]
+      - paragraph
+    - article [ref=e273]:
+      - button "Удалить из очереди" [ref=e274] [cursor=pointer]: ×
+      - generic [ref=e275]:
+        - generic "Нет скора" [ref=e279]: —
+        - link "Бизнес-ассистент" [ref=e280] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132010423
+      - generic [ref=e281]: Profession assistant · от 150 000 ₽ за месяц, на руки
+      - generic [ref=e282]:
+        - generic [ref=e283]: "Место работы:"
+        - generic [ref=e285]: Не указано
+      - generic [ref=e287]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e290]
+      - generic [ref=e291]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e292]
+        - generic [ref=e293]:
+          - generic [ref=e294]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e295] [cursor=pointer]:
+              - img [ref=e296]
+            - button "Создать сопроводительное" [ref=e298] [cursor=pointer]
+          - generic [ref=e299]:
+            - button "Подходит" [ref=e300] [cursor=pointer]
+            - button "Не подходит" [ref=e301] [cursor=pointer]
+      - paragraph
+    - article [ref=e302]:
+      - button "Удалить из очереди" [ref=e303] [cursor=pointer]: ×
+      - generic [ref=e304]:
+        - generic "Нет скора" [ref=e308]: —
+        - link "Руководитель партнерского направления" [ref=e309] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132127768
+      - generic [ref=e310]: DV-Consulting · от 200 000 до 300 000 ₽ за месяц, на руки
+      - generic [ref=e311]:
+        - generic [ref=e312]: "Место работы:"
+        - generic [ref=e314]: Не указано
+      - generic [ref=e316]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e319]
+      - generic [ref=e320]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e321]
+        - generic [ref=e322]:
+          - generic [ref=e323]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e324] [cursor=pointer]:
+              - img [ref=e325]
+            - button "Создать сопроводительное" [ref=e327] [cursor=pointer]
+          - generic [ref=e328]:
+            - button "Подходит" [ref=e329] [cursor=pointer]
+            - button "Не подходит" [ref=e330] [cursor=pointer]
+      - paragraph
+    - article [ref=e331]:
+      - button "Удалить из очереди" [ref=e332] [cursor=pointer]: ×
+      - generic [ref=e333]:
+        - generic "Нет скора" [ref=e337]: —
+        - link "Бизнес-ассистент CEO в US tech-компанию" [ref=e338] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132165390
+      - generic [ref=e339]: Assisteca · от 3 000 до 4 000 € за месяц, до вычета налогов
+      - generic [ref=e340]:
+        - generic [ref=e341]: "Место работы:"
+        - generic [ref=e343]: Не указано
+      - generic [ref=e345]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e348]
+      - generic [ref=e349]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e350]
+        - generic [ref=e351]:
+          - generic [ref=e352]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e353] [cursor=pointer]:
+              - img [ref=e354]
+            - button "Создать сопроводительное" [ref=e356] [cursor=pointer]
+          - generic [ref=e357]:
+            - button "Подходит" [ref=e358] [cursor=pointer]
+            - button "Не подходит" [ref=e359] [cursor=pointer]
+      - paragraph
+    - article [ref=e360]:
+      - button "Удалить из очереди" [ref=e361] [cursor=pointer]: ×
+      - generic [ref=e362]:
+        - generic "Нет скора" [ref=e366]: —
+        - link "Operations Manager" [ref=e367] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132093964
+      - generic [ref=e368]: A3F Group · от 100 000 ₽ за месяц, до вычета налогов
+      - generic [ref=e369]:
+        - generic [ref=e370]: "Место работы:"
+        - generic [ref=e372]: Не указано
+      - generic [ref=e374]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e377]
+      - generic [ref=e378]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e379]
+        - generic [ref=e380]:
+          - generic [ref=e381]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e382] [cursor=pointer]:
+              - img [ref=e383]
+            - button "Создать сопроводительное" [ref=e385] [cursor=pointer]
+          - generic [ref=e386]:
+            - button "Подходит" [ref=e387] [cursor=pointer]
+            - button "Не подходит" [ref=e388] [cursor=pointer]
+      - paragraph
+    - article [ref=e389]:
+      - button "Удалить из очереди" [ref=e390] [cursor=pointer]: ×
+      - generic [ref=e391]:
+        - generic "Нет скора" [ref=e395]: —
+        - link "Project Manager (Digital/Crypto Media)" [ref=e396] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132069212
+      - generic [ref=e397]: HRScan
+      - generic [ref=e398]:
+        - generic [ref=e399]: "Место работы:"
+        - generic [ref=e401]: Не указано
+      - generic [ref=e403]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e406]
+      - generic [ref=e407]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e408]
+        - generic [ref=e409]:
+          - generic [ref=e410]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e411] [cursor=pointer]:
+              - img [ref=e412]
+            - button "Создать сопроводительное" [ref=e414] [cursor=pointer]
+          - generic [ref=e415]:
+            - button "Подходит" [ref=e416] [cursor=pointer]
+            - button "Не подходит" [ref=e417] [cursor=pointer]
+      - paragraph
+    - article [ref=e418]:
+      - button "Удалить из очереди" [ref=e419] [cursor=pointer]: ×
+      - generic [ref=e420]:
+        - generic [ref=e422]:
+          - generic "Итоговый балл 0, наведи для расшифровки" [ref=e424]: "0"
+          - button "Какая модель оценивала" [ref=e426] [cursor=pointer]: i
+        - link "Бизнес-ассистент в IT-стартап" [ref=e427] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132044086?hhtmFrom
+      - generic [ref=e428]: "Hr-formula · от 140 000 до 180 000 ₽ за месяц, на руки · ≈1429–1837 USD/мес · запрос: (добавлена вручную)"
+      - generic [ref=e429]:
+        - generic [ref=e430]: "Место работы:"
+        - generic [ref=e432]: Удаленка
+      - generic [ref=e434]: "Английский:"
+      - paragraph [ref=e436]: Оптимальный подход для роли
+      - paragraph [ref=e437]: "Нюансы: Нуансы и зоны внимания"
+      - button "Отклик в браузере" [disabled] [ref=e439]
+      - generic [ref=e440]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e441]
+        - generic [ref=e442]:
+          - generic [ref=e443]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e444] [cursor=pointer]:
+              - img [ref=e445]
+            - button "Создать сопроводительное" [ref=e447] [cursor=pointer]
+          - generic [ref=e448]:
+            - button "Подходит" [ref=e449] [cursor=pointer]
+            - button "Не подходит" [ref=e450] [cursor=pointer]
+      - paragraph
+    - article [ref=e451]:
+      - button "Удалить из очереди" [ref=e452] [cursor=pointer]: ×
+      - generic [ref=e453]:
+        - generic "Нет скора" [ref=e457]: —
+        - link "Старший менеджер по внедрению продукта" [ref=e458] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/131867291
+      - generic [ref=e459]: "Яндекс Крауд: Поддержка · от 130 000 ₽ за месяц, на руки"
+      - generic [ref=e460]:
+        - generic [ref=e461]: "Место работы:"
+        - generic [ref=e463]: Не указано
+      - generic [ref=e465]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e468]
+      - generic [ref=e469]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e470]
+        - generic [ref=e471]:
+          - generic [ref=e472]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e473] [cursor=pointer]:
+              - img [ref=e474]
+            - button "Создать сопроводительное" [ref=e476] [cursor=pointer]
+          - generic [ref=e477]:
+            - button "Подходит" [ref=e478] [cursor=pointer]
+            - button "Не подходит" [ref=e479] [cursor=pointer]
+      - paragraph
+    - article [ref=e480]:
+      - button "Удалить из очереди" [ref=e481] [cursor=pointer]: ×
+      - generic [ref=e482]:
+        - generic "Нет скора" [ref=e486]: —
+        - link "Старший менеджер по внедрению (NeuroExpert Hybrid)" [ref=e487] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/131885990
+      - generic [ref=e488]: "Яндекс Крауд: Поддержка · от 130 000 ₽ за месяц, на руки"
+      - generic [ref=e489]:
+        - generic [ref=e490]: "Место работы:"
+        - generic [ref=e492]: Не указано
+      - generic [ref=e494]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e497]
+      - generic [ref=e498]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e499]
+        - generic [ref=e500]:
+          - generic [ref=e501]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e502] [cursor=pointer]:
+              - img [ref=e503]
+            - button "Создать сопроводительное" [ref=e505] [cursor=pointer]
+          - generic [ref=e506]:
+            - button "Подходит" [ref=e507] [cursor=pointer]
+            - button "Не подходит" [ref=e508] [cursor=pointer]
+      - paragraph
+    - article [ref=e509]:
+      - button "Удалить из очереди" [ref=e510] [cursor=pointer]: ×
+      - generic [ref=e511]:
+        - generic "Нет скора" [ref=e515]: —
+        - link "Операционный менеджер" [ref=e516] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132035269
+      - generic [ref=e517]: ООО Фортекс
+      - generic [ref=e518]:
+        - generic [ref=e519]: "Место работы:"
+        - generic [ref=e521]: Не указано
+      - generic [ref=e523]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e526]
+      - generic [ref=e527]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e528]
+        - generic [ref=e529]:
+          - generic [ref=e530]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e531] [cursor=pointer]:
+              - img [ref=e532]
+            - button "Создать сопроводительное" [ref=e534] [cursor=pointer]
+          - generic [ref=e535]:
+            - button "Подходит" [ref=e536] [cursor=pointer]
+            - button "Не подходит" [ref=e537] [cursor=pointer]
+      - paragraph
+    - article [ref=e538]:
+      - button "Удалить из очереди" [ref=e539] [cursor=pointer]: ×
+      - generic [ref=e540]:
+        - generic "Нет скора" [ref=e544]: —
+        - link "Консультант в практику Операционные модели/Разработка систем управления" [ref=e545] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132111477
+      - generic [ref=e546]: ЭКОПСИ Консалтинг
+      - generic [ref=e547]:
+        - generic [ref=e548]: "Место работы:"
+        - generic [ref=e550]: Не указано
+      - generic [ref=e552]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e555]
+      - generic [ref=e556]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e557]
+        - generic [ref=e558]:
+          - generic [ref=e559]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e560] [cursor=pointer]:
+              - img [ref=e561]
+            - button "Создать сопроводительное" [ref=e563] [cursor=pointer]
+          - generic [ref=e564]:
+            - button "Подходит" [ref=e565] [cursor=pointer]
+            - button "Не подходит" [ref=e566] [cursor=pointer]
+      - paragraph
+    - article [ref=e567]:
+      - button "Удалить из очереди" [ref=e568] [cursor=pointer]: ×
+      - generic [ref=e569]:
+        - generic "Нет скора" [ref=e573]: —
+        - link "Руководитель проекта / Руководитель направления" [ref=e574] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/131993613
+      - generic [ref=e575]: Placebo/25 · от 200 000 ₽ за месяц, на руки
+      - generic [ref=e576]:
+        - generic [ref=e577]: "Место работы:"
+        - generic [ref=e579]: Не указано
+      - generic [ref=e581]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e584]
+      - generic [ref=e585]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e586]
+        - generic [ref=e587]:
+          - generic [ref=e588]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e589] [cursor=pointer]:
+              - img [ref=e590]
+            - button "Создать сопроводительное" [ref=e592] [cursor=pointer]
+          - generic [ref=e593]:
+            - button "Подходит" [ref=e594] [cursor=pointer]
+            - button "Не подходит" [ref=e595] [cursor=pointer]
+      - paragraph
+    - article [ref=e596]:
+      - button "Удалить из очереди" [ref=e597] [cursor=pointer]: ×
+      - generic [ref=e598]:
+        - generic "Нет скора" [ref=e602]: —
+        - link "Операционный директор (COO)" [ref=e603] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132116103
+      - generic [ref=e604]: Бюро находок
+      - generic [ref=e605]:
+        - generic [ref=e606]: "Место работы:"
+        - generic [ref=e608]: Не указано
+      - generic [ref=e610]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e613]
+      - generic [ref=e614]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e615]
+        - generic [ref=e616]:
+          - generic [ref=e617]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e618] [cursor=pointer]:
+              - img [ref=e619]
+            - button "Создать сопроводительное" [ref=e621] [cursor=pointer]
+          - generic [ref=e622]:
+            - button "Подходит" [ref=e623] [cursor=pointer]
+            - button "Не подходит" [ref=e624] [cursor=pointer]
+      - paragraph
+    - article [ref=e625]:
+      - button "Удалить из очереди" [ref=e626] [cursor=pointer]: ×
+      - generic [ref=e627]:
+        - generic "Нет скора" [ref=e631]: —
+        - link "Chief Operating Officer (COO) / Head of Operations (B2B, Fintech, SAAS)" [ref=e632] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132179411
+      - generic [ref=e633]: ООО Центр Еком · от 300 000 до 500 000 ₽ за месяц, на руки
+      - generic [ref=e634]:
+        - generic [ref=e635]: "Место работы:"
+        - generic [ref=e637]: Не указано
+      - generic [ref=e639]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e642]
+      - generic [ref=e643]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e644]
+        - generic [ref=e645]:
+          - generic [ref=e646]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e647] [cursor=pointer]:
+              - img [ref=e648]
+            - button "Создать сопроводительное" [ref=e650] [cursor=pointer]
+          - generic [ref=e651]:
+            - button "Подходит" [ref=e652] [cursor=pointer]
+            - button "Не подходит" [ref=e653] [cursor=pointer]
+      - paragraph
+    - article [ref=e654]:
+      - button "Удалить из очереди" [ref=e655] [cursor=pointer]: ×
+      - generic [ref=e656]:
+        - generic "Нет скора" [ref=e660]: —
+        - link "SMM-менеджер" [ref=e661] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/129830033
+      - generic [ref=e662]: "Яндекс Крауд: Контент · от 70 000 ₽ за месяц, на руки"
+      - generic [ref=e663]:
+        - generic [ref=e664]: "Место работы:"
+        - generic [ref=e666]: Не указано
+      - generic [ref=e668]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e671]
+      - generic [ref=e672]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e673]
+        - generic [ref=e674]:
+          - generic [ref=e675]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e676] [cursor=pointer]:
+              - img [ref=e677]
+            - button "Создать сопроводительное" [ref=e679] [cursor=pointer]
+          - generic [ref=e680]:
+            - button "Подходит" [ref=e681] [cursor=pointer]
+            - button "Не подходит" [ref=e682] [cursor=pointer]
+      - paragraph
+    - article [ref=e683]:
+      - button "Удалить из очереди" [ref=e684] [cursor=pointer]: ×
+      - generic [ref=e685]:
+        - generic "Нет скора" [ref=e689]: —
+        - link "Менеджер по продажам" [ref=e690] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/128558474
+      - generic [ref=e691]: "Яндекс Крауд: Продажи · до 85 000 ₽ за месяц, на руки"
+      - generic [ref=e692]:
+        - generic [ref=e693]: "Место работы:"
+        - generic [ref=e695]: Не указано
+      - generic [ref=e697]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e700]
+      - generic [ref=e701]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e702]
+        - generic [ref=e703]:
+          - generic [ref=e704]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e705] [cursor=pointer]:
+              - img [ref=e706]
+            - button "Создать сопроводительное" [ref=e708] [cursor=pointer]
+          - generic [ref=e709]:
+            - button "Подходит" [ref=e710] [cursor=pointer]
+            - button "Не подходит" [ref=e711] [cursor=pointer]
+      - paragraph
+    - article [ref=e712]:
+      - button "Удалить из очереди" [ref=e713] [cursor=pointer]: ×
+      - generic [ref=e714]:
+        - generic "Нет скора" [ref=e718]: —
+        - link "Операционный директор по складской логистике (со знанием китайского языка)" [ref=e719] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132012709
+      - generic [ref=e720]: ГАЛА-ЦЕНТР · от 300 000 ₽ за месяц, на руки
+      - generic [ref=e721]:
+        - generic [ref=e722]: "Место работы:"
+        - generic [ref=e724]: Не указано
+      - generic [ref=e726]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e729]
+      - generic [ref=e730]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e731]
+        - generic [ref=e732]:
+          - generic [ref=e733]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e734] [cursor=pointer]:
+              - img [ref=e735]
+            - button "Создать сопроводительное" [ref=e737] [cursor=pointer]
+          - generic [ref=e738]:
+            - button "Подходит" [ref=e739] [cursor=pointer]
+            - button "Не подходит" [ref=e740] [cursor=pointer]
+      - paragraph
+    - article [ref=e741]:
+      - button "Удалить из очереди" [ref=e742] [cursor=pointer]: ×
+      - generic [ref=e743]:
+        - generic "Нет скора" [ref=e747]: —
+        - link "Операционный менеджер" [ref=e748] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/131831483
+      - generic [ref=e749]: BYTIME · от 70 000 до 90 000 ₽ за месяц, до вычета налогов
+      - generic [ref=e750]:
+        - generic [ref=e751]: "Место работы:"
+        - generic [ref=e753]: Не указано
+      - generic [ref=e755]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e758]
+      - generic [ref=e759]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e760]
+        - generic [ref=e761]:
+          - generic [ref=e762]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e763] [cursor=pointer]:
+              - img [ref=e764]
+            - button "Создать сопроводительное" [ref=e766] [cursor=pointer]
+          - generic [ref=e767]:
+            - button "Подходит" [ref=e768] [cursor=pointer]
+            - button "Не подходит" [ref=e769] [cursor=pointer]
+      - paragraph
+    - article [ref=e770]:
+      - button "Удалить из очереди" [ref=e771] [cursor=pointer]: ×
+      - generic [ref=e772]:
+        - generic "Нет скора" [ref=e776]: —
+        - link "Операционный менеджер" [ref=e777] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/131886667
+      - generic [ref=e778]: ООО Платформа · до 160 000 ₽ за месяц, на руки
+      - generic [ref=e779]:
+        - generic [ref=e780]: "Место работы:"
+        - generic [ref=e782]: Не указано
+      - generic [ref=e784]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e787]
+      - generic [ref=e788]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e789]
+        - generic [ref=e790]:
+          - generic [ref=e791]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e792] [cursor=pointer]:
+              - img [ref=e793]
+            - button "Создать сопроводительное" [ref=e795] [cursor=pointer]
+          - generic [ref=e796]:
+            - button "Подходит" [ref=e797] [cursor=pointer]
+            - button "Не подходит" [ref=e798] [cursor=pointer]
+      - paragraph
+    - article [ref=e799]:
+      - button "Удалить из очереди" [ref=e800] [cursor=pointer]: ×
+      - generic [ref=e801]:
+        - generic "Нет скора" [ref=e805]: —
+        - link "Операционный менеджер" [ref=e806] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/131715985
+      - generic [ref=e807]: Petromobil DMCC
+      - generic [ref=e808]:
+        - generic [ref=e809]: "Место работы:"
+        - generic [ref=e811]: Не указано
+      - generic [ref=e813]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e816]
+      - generic [ref=e817]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e818]
+        - generic [ref=e819]:
+          - generic [ref=e820]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e821] [cursor=pointer]:
+              - img [ref=e822]
+            - button "Создать сопроводительное" [ref=e824] [cursor=pointer]
+          - generic [ref=e825]:
+            - button "Подходит" [ref=e826] [cursor=pointer]
+            - button "Не подходит" [ref=e827] [cursor=pointer]
+      - paragraph
+    - article [ref=e828]:
+      - button "Удалить из очереди" [ref=e829] [cursor=pointer]: ×
+      - generic [ref=e830]:
+        - generic "Нет скора" [ref=e834]: —
+        - link "Операционный менеджер" [ref=e835] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132166617
+      - generic [ref=e836]: ООО МЕД-ЭКСПРЕСС-ДИАГНОСТИКА · от 100 000 до 150 000 ₽ за месяц, на руки
+      - generic [ref=e837]:
+        - generic [ref=e838]: "Место работы:"
+        - generic [ref=e840]: Не указано
+      - generic [ref=e842]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e845]
+      - generic [ref=e846]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e847]
+        - generic [ref=e848]:
+          - generic [ref=e849]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e850] [cursor=pointer]:
+              - img [ref=e851]
+            - button "Создать сопроводительное" [ref=e853] [cursor=pointer]
+          - generic [ref=e854]:
+            - button "Подходит" [ref=e855] [cursor=pointer]
+            - button "Не подходит" [ref=e856] [cursor=pointer]
+      - paragraph
+    - article [ref=e857]:
+      - button "Удалить из очереди" [ref=e858] [cursor=pointer]: ×
+      - generic [ref=e859]:
+        - generic "Нет скора" [ref=e863]: —
+        - link "Секретарь/Административный ассистент" [ref=e864] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132096197
+      - generic [ref=e865]: АО АЙТИ ПАРК · от 100 000 до 130 000 ₽ за месяц, до вычета налогов
+      - generic [ref=e866]:
+        - generic [ref=e867]: "Место работы:"
+        - generic [ref=e869]: Не указано
+      - generic [ref=e871]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e874]
+      - generic [ref=e875]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e876]
+        - generic [ref=e877]:
+          - generic [ref=e878]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e879] [cursor=pointer]:
+              - img [ref=e880]
+            - button "Создать сопроводительное" [ref=e882] [cursor=pointer]
+          - generic [ref=e883]:
+            - button "Подходит" [ref=e884] [cursor=pointer]
+            - button "Не подходит" [ref=e885] [cursor=pointer]
+      - paragraph
+    - article [ref=e886]:
+      - button "Удалить из очереди" [ref=e887] [cursor=pointer]: ×
+      - generic [ref=e888]:
+        - generic "Нет скора" [ref=e892]: —
+        - link "Риск-менеджер (Инвестиционная деятельность), Ozon Банк" [ref=e893] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132170348
+      - generic [ref=e894]: Ozon Банк
+      - generic [ref=e895]:
+        - generic [ref=e896]: "Место работы:"
+        - generic [ref=e898]: Не указано
+      - generic [ref=e900]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e903]
+      - generic [ref=e904]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e905]
+        - generic [ref=e906]:
+          - generic [ref=e907]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e908] [cursor=pointer]:
+              - img [ref=e909]
+            - button "Создать сопроводительное" [ref=e911] [cursor=pointer]
+          - generic [ref=e912]:
+            - button "Подходит" [ref=e913] [cursor=pointer]
+            - button "Не подходит" [ref=e914] [cursor=pointer]
+      - paragraph
+    - article [ref=e915]:
+      - button "Удалить из очереди" [ref=e916] [cursor=pointer]: ×
+      - generic [ref=e917]:
+        - generic "Нет скора" [ref=e921]: —
+        - link "Директор по инфраструктуре и операционной деятельности" [ref=e922] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/131611818
+      - generic [ref=e923]: ECOS
+      - generic [ref=e924]:
+        - generic [ref=e925]: "Место работы:"
+        - generic [ref=e927]: Не указано
+      - generic [ref=e929]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e932]
+      - generic [ref=e933]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e934]
+        - generic [ref=e935]:
+          - generic [ref=e936]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e937] [cursor=pointer]:
+              - img [ref=e938]
+            - button "Создать сопроводительное" [ref=e940] [cursor=pointer]
+          - generic [ref=e941]:
+            - button "Подходит" [ref=e942] [cursor=pointer]
+            - button "Не подходит" [ref=e943] [cursor=pointer]
+      - paragraph
+    - article [ref=e944]:
+      - button "Удалить из очереди" [ref=e945] [cursor=pointer]: ×
+      - generic [ref=e946]:
+        - generic "Нет скора" [ref=e950]: —
+        - link "Менеджер по продажам / Операционный менеджер" [ref=e951] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/131356106
+      - generic [ref=e952]: ООО ТЭК Технологии
+      - generic [ref=e953]:
+        - generic [ref=e954]: "Место работы:"
+        - generic [ref=e956]: Не указано
+      - generic [ref=e958]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e961]
+      - generic [ref=e962]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e963]
+        - generic [ref=e964]:
+          - generic [ref=e965]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e966] [cursor=pointer]:
+              - img [ref=e967]
+            - button "Создать сопроводительное" [ref=e969] [cursor=pointer]
+          - generic [ref=e970]:
+            - button "Подходит" [ref=e971] [cursor=pointer]
+            - button "Не подходит" [ref=e972] [cursor=pointer]
+      - paragraph
+    - article [ref=e973]:
+      - button "Удалить из очереди" [ref=e974] [cursor=pointer]: ×
+      - generic [ref=e975]:
+        - generic "Нет скора" [ref=e979]: —
+        - link "Менеджер операционной деятельности производства" [ref=e980] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/131569930
+      - generic [ref=e981]: ООО Мегаполис-Сервис · от 120 000 ₽ за месяц, на руки
+      - generic [ref=e982]:
+        - generic [ref=e983]: "Место работы:"
+        - generic [ref=e985]: Не указано
+      - generic [ref=e987]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e990]
+      - generic [ref=e991]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e992]
+        - generic [ref=e993]:
+          - generic [ref=e994]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e995] [cursor=pointer]:
+              - img [ref=e996]
+            - button "Создать сопроводительное" [ref=e998] [cursor=pointer]
+          - generic [ref=e999]:
+            - button "Подходит" [ref=e1000] [cursor=pointer]
+            - button "Не подходит" [ref=e1001] [cursor=pointer]
+      - paragraph
+    - article [ref=e1002]:
+      - button "Удалить из очереди" [ref=e1003] [cursor=pointer]: ×
+      - generic [ref=e1004]:
+        - generic "Нет скора" [ref=e1008]: —
+        - link "Менеджер по управлению бизнес-процессами / Специалист СМК" [ref=e1009] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132167788
+      - generic [ref=e1010]: Аналитика · от 160 000 до 210 000 ₽ за месяц, до вычета налогов
+      - generic [ref=e1011]:
+        - generic [ref=e1012]: "Место работы:"
+        - generic [ref=e1014]: Не указано
+      - generic [ref=e1016]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e1019]
+      - generic [ref=e1020]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e1021]
+        - generic [ref=e1022]:
+          - generic [ref=e1023]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e1024] [cursor=pointer]:
+              - img [ref=e1025]
+            - button "Создать сопроводительное" [ref=e1027] [cursor=pointer]
+          - generic [ref=e1028]:
+            - button "Подходит" [ref=e1029] [cursor=pointer]
+            - button "Не подходит" [ref=e1030] [cursor=pointer]
+      - paragraph
+    - article [ref=e1031]:
+      - button "Удалить из очереди" [ref=e1032] [cursor=pointer]: ×
+      - generic [ref=e1033]:
+        - generic "Нет скора" [ref=e1037]: —
+        - link "Технический менеджер управления проектами" [ref=e1038] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132001766
+      - generic [ref=e1039]: ООО Стрит Фалькон · от 200 000 ₽ за месяц, на руки
+      - generic [ref=e1040]:
+        - generic [ref=e1041]: "Место работы:"
+        - generic [ref=e1043]: Не указано
+      - generic [ref=e1045]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e1048]
+      - generic [ref=e1049]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e1050]
+        - generic [ref=e1051]:
+          - generic [ref=e1052]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e1053] [cursor=pointer]:
+              - img [ref=e1054]
+            - button "Создать сопроводительное" [ref=e1056] [cursor=pointer]
+          - generic [ref=e1057]:
+            - button "Подходит" [ref=e1058] [cursor=pointer]
+            - button "Не подходит" [ref=e1059] [cursor=pointer]
+      - paragraph
+    - article [ref=e1060]:
+      - button "Удалить из очереди" [ref=e1061] [cursor=pointer]: ×
+      - generic [ref=e1062]:
+        - generic "Нет скора" [ref=e1066]: —
+        - link "Директор управления бизнес процессами / BPM-директор" [ref=e1067] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/129962893
+      - generic [ref=e1068]: СИНЕРГИЯ
+      - generic [ref=e1069]:
+        - generic [ref=e1070]: "Место работы:"
+        - generic [ref=e1072]: Не указано
+      - generic [ref=e1074]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e1077]
+      - generic [ref=e1078]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e1079]
+        - generic [ref=e1080]:
+          - generic [ref=e1081]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e1082] [cursor=pointer]:
+              - img [ref=e1083]
+            - button "Создать сопроводительное" [ref=e1085] [cursor=pointer]
+          - generic [ref=e1086]:
+            - button "Подходит" [ref=e1087] [cursor=pointer]
+            - button "Не подходит" [ref=e1088] [cursor=pointer]
+      - paragraph
+    - article [ref=e1089]:
+      - button "Удалить из очереди" [ref=e1090] [cursor=pointer]: ×
+      - generic [ref=e1091]:
+        - generic "Нет скора" [ref=e1095]: —
+        - link "Руководитель управления административного сопровождения" [ref=e1096] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132127090
+      - generic [ref=e1097]: Красцветмет
+      - generic [ref=e1098]:
+        - generic [ref=e1099]: "Место работы:"
+        - generic [ref=e1101]: Не указано
+      - generic [ref=e1103]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e1106]
+      - generic [ref=e1107]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e1108]
+        - generic [ref=e1109]:
+          - generic [ref=e1110]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e1111] [cursor=pointer]:
+              - img [ref=e1112]
+            - button "Создать сопроводительное" [ref=e1114] [cursor=pointer]
+          - generic [ref=e1115]:
+            - button "Подходит" [ref=e1116] [cursor=pointer]
+            - button "Не подходит" [ref=e1117] [cursor=pointer]
+      - paragraph
+    - article [ref=e1118]:
+      - button "Удалить из очереди" [ref=e1119] [cursor=pointer]: ×
+      - generic [ref=e1120]:
+        - generic "Нет скора" [ref=e1124]: —
+        - link "Менеджер по разработке дистанционного контента" [ref=e1125] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132180688
+      - generic [ref=e1126]: Т-Банк. Бизнес и процессы. Административное управление
+      - generic [ref=e1127]:
+        - generic [ref=e1128]: "Место работы:"
+        - generic [ref=e1130]: Не указано
+      - generic [ref=e1132]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e1135]
+      - generic [ref=e1136]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e1137]
+        - generic [ref=e1138]:
+          - generic [ref=e1139]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e1140] [cursor=pointer]:
+              - img [ref=e1141]
+            - button "Создать сопроводительное" [ref=e1143] [cursor=pointer]
+          - generic [ref=e1144]:
+            - button "Подходит" [ref=e1145] [cursor=pointer]
+            - button "Не подходит" [ref=e1146] [cursor=pointer]
+      - paragraph
+    - article [ref=e1147]:
+      - button "Удалить из очереди" [ref=e1148] [cursor=pointer]: ×
+      - generic [ref=e1149]:
+        - generic "Нет скора" [ref=e1153]: —
+        - link "Пресейл менеджер (категорийный менеджмент / управление ассортиментом)" [ref=e1154] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132155735
+      - generic [ref=e1155]: ООО Тимфоретейл · от 150 000 до 250 000 ₽ за месяц, на руки
+      - generic [ref=e1156]:
+        - generic [ref=e1157]: "Место работы:"
+        - generic [ref=e1159]: Не указано
+      - generic [ref=e1161]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e1164]
+      - generic [ref=e1165]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e1166]
+        - generic [ref=e1167]:
+          - generic [ref=e1168]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e1169] [cursor=pointer]:
+              - img [ref=e1170]
+            - button "Создать сопроводительное" [ref=e1172] [cursor=pointer]
+          - generic [ref=e1173]:
+            - button "Подходит" [ref=e1174] [cursor=pointer]
+            - button "Не подходит" [ref=e1175] [cursor=pointer]
+      - paragraph
+    - article [ref=e1176]:
+      - button "Удалить из очереди" [ref=e1177] [cursor=pointer]: ×
+      - generic [ref=e1178]:
+        - generic "Нет скора" [ref=e1182]: —
+        - link "Менеджер по ВЭД" [ref=e1183] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132168438
+      - generic [ref=e1184]: ИП Макаренко Валентина Ивановна · от 50 000 до 100 000 ₽ за месяц, на руки
+      - generic [ref=e1185]:
+        - generic [ref=e1186]: "Место работы:"
+        - generic [ref=e1188]: Не указано
+      - generic [ref=e1190]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e1193]
+      - generic [ref=e1194]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e1195]
+        - generic [ref=e1196]:
+          - generic [ref=e1197]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e1198] [cursor=pointer]:
+              - img [ref=e1199]
+            - button "Создать сопроводительное" [ref=e1201] [cursor=pointer]
+          - generic [ref=e1202]:
+            - button "Подходит" [ref=e1203] [cursor=pointer]
+            - button "Не подходит" [ref=e1204] [cursor=pointer]
+      - paragraph
+    - article [ref=e1205]:
+      - button "Удалить из очереди" [ref=e1206] [cursor=pointer]: ×
+      - generic [ref=e1207]:
+        - generic "Нет скора" [ref=e1211]: —
+        - link "Operations Manager" [ref=e1212] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/131888506
+      - generic [ref=e1213]: JT marketing · до 1 200 $ за месяц, на руки
+      - generic [ref=e1214]:
+        - generic [ref=e1215]: "Место работы:"
+        - generic [ref=e1217]: Не указано
+      - generic [ref=e1219]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e1222]
+      - generic [ref=e1223]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e1224]
+        - generic [ref=e1225]:
+          - generic [ref=e1226]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e1227] [cursor=pointer]:
+              - img [ref=e1228]
+            - button "Создать сопроводительное" [ref=e1230] [cursor=pointer]
+          - generic [ref=e1231]:
+            - button "Подходит" [ref=e1232] [cursor=pointer]
+            - button "Не подходит" [ref=e1233] [cursor=pointer]
+      - paragraph
+    - article [ref=e1234]:
+      - button "Удалить из очереди" [ref=e1235] [cursor=pointer]: ×
+      - generic [ref=e1236]:
+        - generic "Нет скора" [ref=e1240]: —
+        - link "Senior Hr operations manager" [ref=e1241] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132177786
+      - generic [ref=e1242]: Voximplant
+      - generic [ref=e1243]:
+        - generic [ref=e1244]: "Место работы:"
+        - generic [ref=e1246]: Не указано
+      - generic [ref=e1248]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e1251]
+      - generic [ref=e1252]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e1253]
+        - generic [ref=e1254]:
+          - generic [ref=e1255]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e1256] [cursor=pointer]:
+              - img [ref=e1257]
+            - button "Создать сопроводительное" [ref=e1259] [cursor=pointer]
+          - generic [ref=e1260]:
+            - button "Подходит" [ref=e1261] [cursor=pointer]
+            - button "Не подходит" [ref=e1262] [cursor=pointer]
+      - paragraph
+    - article [ref=e1263]:
+      - button "Удалить из очереди" [ref=e1264] [cursor=pointer]: ×
+      - generic [ref=e1265]:
+        - generic "Нет скора" [ref=e1269]: —
+        - link "Product manager одежда" [ref=e1270] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132004751
+      - generic [ref=e1271]: ИП Савин Олег Эдуардович · от 120 000 до 130 000 ₽ за месяц, на руки
+      - generic [ref=e1272]:
+        - generic [ref=e1273]: "Место работы:"
+        - generic [ref=e1275]: Не указано
+      - generic [ref=e1277]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e1280]
+      - generic [ref=e1281]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e1282]
+        - generic [ref=e1283]:
+          - generic [ref=e1284]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e1285] [cursor=pointer]:
+              - img [ref=e1286]
+            - button "Создать сопроводительное" [ref=e1288] [cursor=pointer]
+          - generic [ref=e1289]:
+            - button "Подходит" [ref=e1290] [cursor=pointer]
+            - button "Не подходит" [ref=e1291] [cursor=pointer]
+      - paragraph
+    - article [ref=e1292]:
+      - button "Удалить из очереди" [ref=e1293] [cursor=pointer]: ×
+      - generic [ref=e1294]:
+        - generic "Нет скора" [ref=e1298]: —
+        - link "Операционный директор (Chief Operating Officer, COO)" [ref=e1299] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132176070
+      - generic [ref=e1300]: ООО Сендис
+      - generic [ref=e1301]:
+        - generic [ref=e1302]: "Место работы:"
+        - generic [ref=e1304]: Не указано
+      - generic [ref=e1306]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e1309]
+      - generic [ref=e1310]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e1311]
+        - generic [ref=e1312]:
+          - generic [ref=e1313]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e1314] [cursor=pointer]:
+              - img [ref=e1315]
+            - button "Создать сопроводительное" [ref=e1317] [cursor=pointer]
+          - generic [ref=e1318]:
+            - button "Подходит" [ref=e1319] [cursor=pointer]
+            - button "Не подходит" [ref=e1320] [cursor=pointer]
+      - paragraph
+    - article [ref=e1321]:
+      - button "Удалить из очереди" [ref=e1322] [cursor=pointer]: ×
+      - generic [ref=e1323]:
+        - generic "Нет скора" [ref=e1327]: —
+        - link "CRM manager" [ref=e1328] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/131357789
+      - generic [ref=e1329]: GAC
+      - generic [ref=e1330]:
+        - generic [ref=e1331]: "Место работы:"
+        - generic [ref=e1333]: Не указано
+      - generic [ref=e1335]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e1338]
+      - generic [ref=e1339]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e1340]
+        - generic [ref=e1341]:
+          - generic [ref=e1342]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e1343] [cursor=pointer]:
+              - img [ref=e1344]
+            - button "Создать сопроводительное" [ref=e1346] [cursor=pointer]
+          - generic [ref=e1347]:
+            - button "Подходит" [ref=e1348] [cursor=pointer]
+            - button "Не подходит" [ref=e1349] [cursor=pointer]
+      - paragraph
+    - article [ref=e1350]:
+      - button "Удалить из очереди" [ref=e1351] [cursor=pointer]: ×
+      - generic [ref=e1352]:
+        - generic "Нет скора" [ref=e1356]: —
+        - link "Менеджер по ценообразованию/Pricing Operations Manager" [ref=e1357] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/131515818
+      - generic [ref=e1358]: Юрент
+      - generic [ref=e1359]:
+        - generic [ref=e1360]: "Место работы:"
+        - generic [ref=e1362]: Не указано
+      - generic [ref=e1364]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e1367]
+      - generic [ref=e1368]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e1369]
+        - generic [ref=e1370]:
+          - generic [ref=e1371]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e1372] [cursor=pointer]:
+              - img [ref=e1373]
+            - button "Создать сопроводительное" [ref=e1375] [cursor=pointer]
+          - generic [ref=e1376]:
+            - button "Подходит" [ref=e1377] [cursor=pointer]
+            - button "Не подходит" [ref=e1378] [cursor=pointer]
+      - paragraph
+    - article [ref=e1379]:
+      - button "Удалить из очереди" [ref=e1380] [cursor=pointer]: ×
+      - generic [ref=e1381]:
+        - generic "Нет скора" [ref=e1385]: —
+        - link "Legal Operations Specialist (English and Russian speaking)" [ref=e1386] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/132161875
+      - generic [ref=e1387]: Crystalia Glass LLC
+      - generic [ref=e1388]:
+        - generic [ref=e1389]: "Место работы:"
+        - generic [ref=e1391]: Не указано
+      - generic [ref=e1393]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e1396]
+      - generic [ref=e1397]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e1398]
+        - generic [ref=e1399]:
+          - generic [ref=e1400]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e1401] [cursor=pointer]:
+              - img [ref=e1402]
+            - button "Создать сопроводительное" [ref=e1404] [cursor=pointer]
+          - generic [ref=e1405]:
+            - button "Подходит" [ref=e1406] [cursor=pointer]
+            - button "Не подходит" [ref=e1407] [cursor=pointer]
+      - paragraph
+    - article [ref=e1408]:
+      - button "Удалить из очереди" [ref=e1409] [cursor=pointer]: ×
+      - generic [ref=e1410]:
+        - generic "Нет скора" [ref=e1414]: —
+        - link "Ведущий менеджер операционного отдела" [ref=e1415] [cursor=pointer]:
+          - /url: https://hh.ru/vacancy/131149945
+      - generic [ref=e1416]: ББР Банк
+      - generic [ref=e1417]:
+        - generic [ref=e1418]: "Место работы:"
+        - generic [ref=e1420]: Не указано
+      - generic [ref=e1422]: "Английский:"
+      - paragraph
+      - button "Отклик в браузере" [disabled] [ref=e1425]
+      - generic [ref=e1426]:
+        - textbox "Причина (особенно при отклонении)…" [ref=e1427]
+        - generic [ref=e1428]:
+          - generic [ref=e1429]:
+            - button "Обновить текст вакансии с hh.ru и заново оценить через OpenRouter" [ref=e1430] [cursor=pointer]:
+              - img [ref=e1431]
+            - button "Создать сопроводительное" [ref=e1433] [cursor=pointer]
+          - generic [ref=e1434]:
+            - button "Подходит" [ref=e1435] [cursor=pointer]
+            - button "Не подходит" [ref=e1436] [cursor=pointer]
+      - paragraph

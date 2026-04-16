@@ -1,0 +1,23 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - heading "Очередь вакансий" [level=1] [ref=e4]
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - button "📝 Фильтры" [ref=e8] [cursor=pointer]
+          - button "➕ Добавить" [ref=e9] [cursor=pointer]
+          - button "🔍 Sourcing" [ref=e10] [cursor=pointer]
+          - generic [ref=e13]: 0/0
+          - generic [ref=e16]: 0/0
+        - button "Лог отклика hh" [ref=e17] [cursor=pointer]
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - button "На проверке (0)" [ref=e20] [cursor=pointer]
+        - button "Подходят (0)" [ref=e21] [cursor=pointer]
+        - button "Отклонённые (0)" [ref=e22] [cursor=pointer]
+      - generic [ref=e23]:
+        - textbox "Поиск..." [ref=e24]
+        - button "×" [ref=e25] [cursor=pointer]
+      - button "🔄" [ref=e26] [cursor=pointer]:
+        - generic [ref=e27]: 🔄
+  - main [ref=e28]

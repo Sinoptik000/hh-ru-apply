@@ -512,12 +512,13 @@ const server = http.createServer(async (req, res) => {
     const logFd = fs.openSync(HH_APPLY_CHAT_LOG_FILE, 'a');
     let child;
     try {
-      child = spawn(process.execPath, [scriptPath, `--id=${id}`], {
-        cwd: ROOT,
-        detached: true,
-        stdio: ['ignore', logFd, logFd],
-        env: process.env,
-      });
+child = spawn(process.execPath, [scriptPath, `--id=${id}`], {
+    cwd: ROOT,
+    detached: true,
+    windowsHide: true,
+    stdio: ['ignore', logFd, logFd],
+    env: process.env,
+  });
     } finally {
       fs.closeSync(logFd);
     }
@@ -588,31 +589,16 @@ if (req.method === 'POST' && pathname === '/api/vacancy/add-from-clipboard') {
     recordId: null,
   }), 'utf-8');
 
-  // Spawn detached child process
-  const logFile = path.join(DATA_DIR, 'add-vacancy.log');
-  const header = `\n======== ${new Date().toISOString()} add-vacancy start ========\n`;
-  fs.appendFileSync(logFile, header, 'utf-8');
-  const logFd = fs.openSync(logFile, 'a');
-
-  let child;
-  try {
-    child = spawn(process.execPath, [workerScript, `--url=${url}`], {
-      cwd: ROOT,
-      detached: true,
-      stdio: ['ignore', logFd, logFd],
-      env: process.env,
-    });
-  } finally {
-    fs.closeSync(logFd);
-  }
-
-  child.on('exit', (code, signal) => {
-    const line = `\n--- add-vacancy exit code=${code} signal=${signal || ''} at ${new Date().toISOString()} ---\n`;
-    try {
-      fs.appendFileSync(logFile, line, 'utf-8');
-    } catch { /* ignore */ }
+  // Spawn background child process
+  const logFd = fs.openSync(path.join(DATA_DIR, 'add-vacancy-worker.log'), 'a');
+  spawn(process.execPath, [workerScript, `--url=${url}`], {
+    cwd: ROOT,
+    detached: true,
+    windowsHide: false,
+    stdio: ['ignore', logFd, logFd],
+    env: process.env,
   });
-  child.unref();
+  fs.closeSync(logFd);
 
   return sendJson(res, 200, { ok: true, id: url });
 }

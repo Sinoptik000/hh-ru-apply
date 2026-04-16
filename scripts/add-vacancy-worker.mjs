@@ -13,7 +13,7 @@ import { fileURLToPath } from 'url';
 import { loadEnv } from '../lib/load-env.mjs';
 loadEnv();
 
-import { sessionProfilePath, ROOT, DATA_DIR } from '../lib/paths.mjs';
+import { ROOT, DATA_DIR } from '../lib/paths.mjs';
 import { loadPreferences } from '../lib/preferences.mjs';
 import { parseVacancyPage, vacancyIdFromUrl } from '../lib/vacancy-parse.mjs';
 import { runHardFilters } from '../lib/filters.mjs';
@@ -89,10 +89,14 @@ async function safeParseVacancyPage(page) {
       const employment = t('[data-qa="work-formats-text"]') || t('[data-qa="vacancy-employment-mode"]') || t('[data-qa="vacancy-view-employment-mode"]');
       const address = t('[data-qa="vacancy-view-location"]') || t('[data-qa="vacancy-view-raw-address"]');
 
-      let description =
-        t('[data-qa="vacancy-description"]') ||
-        t('.vacancy-description') ||
-        t('[itemprop="description"]');
+let description =
+ t('[data-qa="vacancy-description"]') ||
+ t('[data-qa="vacancy-view-vacancyDescription"]') ||
+ t('.vacancy-description') ||
+ t('.vacancy-section') ||
+ t('[itemprop="description"]') ||
+ t('.bloko-text') ||
+ document.querySelector('[class*="vacancy-description"]')?.textContent?.replace(/\s+/g, ' ')?.trim() || '';
 
       let languages = [];
       const langMatch = document.body.textContent.match(/(Английский|English)\s*—\s*(\S+(?:\s*—\s*\S+)?)/i);
@@ -138,12 +142,6 @@ async function main() {
   updateProgress({ url: vacancyUrl, vacancyId, step: 'clipboard', percent: 10, message: 'Проверка сессии…' });
 
   const prefs = loadPreferences();
-  const profile = sessionProfilePath();
-
-  if (!fs.existsSync(profile)) {
-    updateProgress({ error: 'Нет профиля Chromium. Сначала: npm run login', step: 'clipboard', percent: 0 });
-    process.exit(1);
-  }
 
   const cvBundle = await loadCvBundle();
   for (const w of cvBundle.warnings) console.warn('[CV]', w);
@@ -152,28 +150,29 @@ async function main() {
     process.exit(1);
   }
 
-  updateProgress({ step: 'parsing', percent: 20, message: 'Открытие браузера…' });
+updateProgress({ step: 'parsing', percent: 20, message: 'Открытие браузера…' });
 
-  let ctx;
-  try {
-    ctx = await withTimeout(
-      chromium.launchPersistentContext(profile, {
-        headless,
-        viewport: { width: 1280, height: 800 },
-        locale: 'ru-RU',
-        timeout: 30000,
-      }),
-      60000,
-      'launchPersistentContext'
-    );
-  } catch (e) {
-    updateProgress({ error: `Не удалось запустить браузер: ${e.message}`, step: 'parsing', percent: 20 });
-    process.exit(1);
-  }
+let browser;
+try {
+  browser = await withTimeout(
+    chromium.launch({
+      headless,
+      viewport: { width: 1280, height: 800 },
+      locale: 'ru-RU',
+      timeout: 30000,
+    }),
+    60000,
+    'chromium.launch'
+  );
+} catch (e) {
+  updateProgress({ error: `Не удалось запустить браузер: ${e.message}`, step: 'parsing', percent: 20 });
+  process.exit(1);
+}
 
-  updateProgress({ step: 'parsing', percent: 25, message: 'Навигация…' });
+const ctx = await browser.newContext();
+const page = await ctx.newPage();
 
-  const page = ctx.pages()[0] || (await ctx.newPage());
+updateProgress({ step: 'parsing', percent: 25, message: 'Навигация…' });
 
   try {
     await withTimeout(
@@ -185,7 +184,7 @@ async function main() {
     if (looksLikeLoginUrl(page.url())) {
       updateProgress({ error: 'Сессия не активна. Выполните: npm run login', step: 'parsing', percent: 25 });
       await Promise.race([
-        ctx.close(),
+        browser.close(),
         new Promise(r => setTimeout(() => r('timeout'), 3000))
       ]).catch(() => {});
       process.exit(1);
@@ -220,7 +219,7 @@ async function main() {
         percent: 50
       });
       await Promise.race([
-        ctx.close(),
+        browser.close(),
         new Promise(r => setTimeout(() => r('timeout'), 3000))
       ]).catch(() => {});
       process.exit(0);
@@ -272,7 +271,7 @@ async function main() {
     if (known.has(vacancyId)) {
       updateProgress({ error: 'Эта вакансия уже есть в очереди', step: 'saving', percent: 90 });
       await Promise.race([
-        ctx.close(),
+        browser.close(),
         new Promise(r => setTimeout(() => r('timeout'), 3000))
       ]).catch(() => {});
       process.exit(0);
@@ -305,7 +304,7 @@ async function main() {
       geminiRisks: llm.risks,
       geminiMatchCv: llm.matchCv,
       geminiTags: llm.tags,
-      status: 'pending',
+      status: 'approved',
       feedbackReason: '',
       createdAt: new Date().toISOString(),
       updatedAt: null,
@@ -322,7 +321,7 @@ async function main() {
     // Force-close browser — don't wait forever
     try {
       await Promise.race([
-        ctx.close(),
+        browser.close(),
         new Promise(r => setTimeout(() => r('timeout'), 3000))
       ]);
     } catch (e) {
@@ -334,7 +333,7 @@ async function main() {
     updateProgress({ error: `Ошибка: ${e.message}`, step: 'parsing', percent: 30 });
     if (ctx) {
       await Promise.race([
-        ctx.close(),
+        browser.close(),
         new Promise(r => setTimeout(() => r('timeout'), 3000))
       ]).catch(() => {});
     }

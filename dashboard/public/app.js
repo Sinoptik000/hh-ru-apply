@@ -21,6 +21,15 @@ let vacancyCounts = { pending: 0, approved: 0, rejected: 0 };
 /** Кэш записей по статусам */
 let cachedItems = { pending: null, approved: null, rejected: null };
 
+/** Состояние для批量ного обновления секции */
+let bulkRefreshState = {
+active: false,
+total: 0,
+completed: 0,
+};
+
+const BATCH_LIMIT = 20;
+
 /** Сброс кэша — требует перезагрузки при следующем load() */
 function invalidateCache() {
   cachedItems = { pending: null, approved: null, rejected: null };
@@ -54,6 +63,15 @@ function showToast(message, variant = 'neutral') {
     setTimeout(() => t.remove(), 280);
   };
   setTimeout(hide, 2600);
+}
+
+function needsVacancyBodyRefresh(item) {
+const desc = item.descriptionPreview || '';
+return desc.trim().length < 80;
+}
+
+function getIncompleteCount(items) {
+return (items || []).filter(needsVacancyBodyRefresh).length;
 }
 
 async function api(path, opts = {}) {
@@ -522,8 +540,6 @@ document.querySelector('.btn-add-vacancy')?.addEventListener('click', async () =
     return;
   }
 
-  showAddProgress(0, 'Проверка…');
-
   try {
     const res = await api('/api/vacancy/add-from-clipboard', {
       method: 'POST',
@@ -532,17 +548,22 @@ document.querySelector('.btn-add-vacancy')?.addEventListener('click', async () =
 
     startAddVacancyPolling(trimmed, res.id);
 
-  } catch (e) {
-showToast(`Ошибка: ${e.message}`, 'bad');
- setTimeout(hideAddProgress, 2500);
-    btn.disabled = false;
-  }
+} catch (e) {
+  showToast(`Ошибка: ${e.message}`, 'bad');
+  btn.disabled = false;
+ }
 });
 
 function startAddVacancyPolling(url, tempId) {
   if (addVacancyPollInterval) {
     clearInterval(addVacancyPollInterval);
   }
+
+  const vacancyIdFromUrl = (u) => {
+    const m = u.match(/hh\.ru\/vacancy\/(\d+)/);
+    return m ? m[1] : null;
+  };
+  const expectedVacancyId = vacancyIdFromUrl(url);
 
   addVacancyPollInterval = setInterval(async () => {
     try {
@@ -551,57 +572,71 @@ function startAddVacancyPolling(url, tempId) {
       // Debug log
       console.log('[add-vacancy poll]', JSON.stringify(progress));
 
-      if (progress.url !== url && progress.url !== undefined) {
+      if (progress.vacancyId && progress.vacancyId !== expectedVacancyId) {
         clearInterval(addVacancyPollInterval);
         addVacancyPollInterval = null;
         return;
       }
 
-showAddProgress(progress.percent, progress.message);
+  if (progress.step === 'saving' && progress.percent === 100) {
+  clearInterval(addVacancyPollInterval);
+  addVacancyPollInterval = null;
 
- if (progress.step === 'saving' && progress.percent === 100) {
- clearInterval(addVacancyPollInterval);
- addVacancyPollInterval = null;
-
- setTimeout(async () => {
-    hideAddProgress();
-    showToast('Вакансия добавлена!', 'good');
+setTimeout(async () => {
+  showToast('Вакансия добавлена!', 'good');
 
     const btn = document.querySelector('.btn-add-vacancy');
     btn.disabled = false;
 
-    // Switch to "На проверке" tab to see the new vacancy
-    if (currentStatus !== 'pending') {
+    if (currentStatus !== 'approved') {
       vacancyTabsEl.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-      const pendingTab = vacancyTabsEl.querySelector('[data-status="pending"]');
-      if (pendingTab) pendingTab.classList.add('active');
-      currentStatus = 'pending';
+      const approvedTab = vacancyTabsEl.querySelector('[data-status="approved"]');
+      if (approvedTab) approvedTab.classList.add('active');
+      currentStatus = 'approved';
       listEl.innerHTML = '';
     }
 
     invalidateCache();
     await load(true);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       const newCard = document.querySelector(`[data-vacancy-url="${url}"]`);
       if (newCard) {
         newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
         newCard.classList.add('card--new-highlight');
         setTimeout(() => newCard.classList.remove('card--new-highlight'), 2000);
+
+        const item = Object.values(cachedItems).flat().find(v => v.url === url);
+        if (item?.id) {
+          try {
+            await requestCoverLetterGenerate(item.id, false);
+            showToast('Сопроводительное сгенерировано', 'good');
+          } catch (e) {
+            if (e.status === 409) {
+              try {
+                await requestCoverLetterGenerate(item.id, true);
+                showToast('Новые варианты готовы', 'good');
+              } catch (e2) {
+                console.error('Cover letter generation failed:', e2.message);
+              }
+            } else {
+              console.error('Cover letter generation failed:', e.message);
+            }
+          }
+        }
       }
     }, 100);
   }, 400);
 
   return;
-}
+ }
 
 if (progress.error) {
- clearInterval(addVacancyPollInterval);
- addVacancyPollInterval = null;
- showToast(`Ошибка: ${progress.error}`, 'bad');
- setTimeout(hideAddProgress, 2500);
- const btn = document.querySelector('.btn-add-vacancy');
- btn.disabled = false;
+  clearInterval(addVacancyPollInterval);
+  addVacancyPollInterval = null;
+  showToast(`Ошибка: ${progress.error}`, 'bad');
+  const btn = document.querySelector('.btn-add-vacancy');
+  btn.disabled = false;
  }
 
 } catch (e) {
@@ -1030,19 +1065,108 @@ function renderVacancyList() {
     return;
   }
 
-  filtered.forEach((it) => listEl.appendChild(renderCard(it)));
-  syncVacancyTabs();
+filtered.forEach((it) => listEl.appendChild(renderCard(it)));
+syncVacancyTabs();
+updateRefreshSectionButton();
 }
 
 function syncVacancyTabs() {
-  vacancyTabsEl.querySelectorAll('.tab').forEach((b) => {
-    const status = b.dataset.status;
-    const count = vacancyCounts[status] ?? 0;
-    const baseLabel = b.dataset.baseLabel || b.textContent.replace(/\s*\(\d+\)\s*$/, '');
-    if (!b.dataset.baseLabel) b.dataset.baseLabel = baseLabel;
-    b.textContent = `${baseLabel} (${count})`;
-    b.classList.toggle('active', status === currentStatus);
-  });
+vacancyTabsEl.querySelectorAll('.tab').forEach((b) => {
+const status = b.dataset.status;
+const count = vacancyCounts[status] ?? 0;
+const baseLabel = b.dataset.baseLabel || b.textContent.replace(/\s*\(\d+\)\s*$/, '');
+if (!b.dataset.baseLabel) b.dataset.baseLabel = baseLabel;
+b.textContent = `${baseLabel} (${count})`;
+b.classList.toggle('active', status === currentStatus);
+});
+}
+
+function updateRefreshSectionButton() {
+const btn = document.getElementById('btn-refresh-section');
+if (!btn) return;
+const items = cachedItems[currentStatus];
+if (items === null) {
+btn.hidden = true;
+return;
+}
+const incompleteCount = getIncompleteCount(items);
+if (incompleteCount === 0 || bulkRefreshState.active) {
+btn.hidden = true;
+return;
+}
+btn.hidden = false;
+const countEl = btn.querySelector('.refresh-count');
+if (countEl) {
+countEl.textContent = incompleteCount > BATCH_LIMIT ? `${BATCH_LIMIT}+` : incompleteCount;
+}
+}
+
+function setRefreshSectionLoading(loading, total) {
+const btn = document.getElementById('btn-refresh-section');
+if (!btn) return;
+bulkRefreshState.active = loading;
+bulkRefreshState.total = total;
+bulkRefreshState.completed = 0;
+btn.disabled = loading;
+btn.classList.toggle('loading', loading);
+if (loading) {
+btn.style.setProperty('--progress', '0%');
+} else {
+btn.style.setProperty('--progress', '100%');
+setTimeout(() => btn.style.removeProperty('--progress'), 600);
+}
+}
+
+function updateRefreshSectionProgress(completed, total) {
+const btn = document.getElementById('btn-refresh-section');
+if (!btn) return;
+bulkRefreshState.completed = completed;
+const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+btn.style.setProperty('--progress', `${pct}%`);
+}
+
+async function refreshIncompleteInSection() {
+const items = cachedItems[currentStatus];
+if (!items) {
+console.error('cachedItems[currentStatus] is null. Current status:', currentStatus);
+showToast('Данные не загружены. Переключитесь на раздел.', 'bad');
+return;
+}
+const incomplete = items.filter(needsVacancyBodyRefresh);
+if (incomplete.length === 0) return;
+const batch = incomplete.slice(0, BATCH_LIMIT);
+setRefreshSectionLoading(true, batch.length);
+let success = 0;
+let failed = 0;
+try {
+for (const item of batch) {
+try {
+const res = await api('/api/vacancy/refresh-body', {
+method: 'POST',
+body: JSON.stringify({ id: item.id }),
+});
+if (res.ok) success++;
+else failed++;
+} catch (e) {
+failed++;
+console.error(`Failed to refresh vacancy ${item.id}:`, e);
+}
+updateRefreshSectionProgress(success + failed, batch.length);
+}
+invalidateCache();
+await load();
+} catch (e) {
+console.error('Bulk refresh failed:', e);
+showToast(`Ошибка: ${e.message}`, 'bad');
+} finally {
+setRefreshSectionLoading(false);
+const remaining = getIncompleteCount(cachedItems[currentStatus] || []);
+if (remaining > 0) {
+showToast(`Обновлено ${success} из ${batch.length}. Ещё ${remaining} — нажмите ещё раз`, failed ? 'neutral' : 'good');
+} else {
+showToast(`Обновлено ${success} из ${batch.length}${failed ? ` (${failed} ошибок)` : ''}`, failed ? 'neutral' : 'good');
+}
+}
 }
 
 async function load(forceRefresh = false) {
@@ -1100,25 +1224,36 @@ renderVacancyList();
 }
 
 vacancyTabsEl.querySelectorAll('.tab').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    vacancyTabsEl.querySelectorAll('.tab').forEach((b) => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentStatus = btn.dataset.status;
+btn.addEventListener('click', () => {
+vacancyTabsEl.querySelectorAll('.tab').forEach((b) => b.classList.remove('active'));
+btn.classList.add('active');
+currentStatus = btn.dataset.status;
 // Если данные уже в кэше — отображаем сразу, иначе загружаем
-  if (cachedItems[currentStatus] !== null) {
-    renderVacancyList();
-  } else {
-    load();
-  }
-  });
+if (cachedItems[currentStatus] !== null) {
+renderVacancyList();
+} else {
+load();
+}
+updateRefreshSectionButton();
+});
 });
 
 syncVacancyTabs();
+updateRefreshSectionButton();
 
 const searchInput = document.getElementById('vacancy-search');
 const clearBtn = document.getElementById('vacancy-search-clear');
 if (searchInput) searchInput.addEventListener('input', onSearchInput);
 if (clearBtn) clearBtn.addEventListener('click', clearSearch);
+
+const refreshSectionBtn = document.getElementById('btn-refresh-section');
+if (refreshSectionBtn) {
+refreshSectionBtn.addEventListener('click', () => {
+if (!bulkRefreshState.active) {
+refreshIncompleteInSection();
+}
+});
+}
 
 // Проверка активного sourcing при загрузке
 async function checkActiveSourcing() {

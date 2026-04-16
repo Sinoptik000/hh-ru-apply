@@ -34,12 +34,7 @@
 </div>
 <span class="sourcing-progress-text">0/0</span>
 </div>
-<div class="add-vacancy-progress-wrap" hidden>
- <div class="add-vacancy-progress-bar">
- <div class="add-vacancy-progress-fill" style="width: 0%"></div>
- </div>
- <span class="add-vacancy-progress-text">0/0</span>
- </div>
+
 </div>
           <button type="button" class="btn btn-log-apply" title="Последние строки лога Playwright (Отклик в браузере)">
             Лог отклика hh
@@ -47,21 +42,31 @@
         </div>
       </div>
 <div class="tabs-row">
-  <div class="tabs vacancy-tabs">
-    <button type="button" data-status="pending" class="tab active">На проверке</button>
-    <button type="button" data-status="approved" class="tab">Подходят</button>
-    <button type="button" data-status="rejected" class="tab">Отклонённые</button>
-  </div>
-  <div class="search-bar-wrap">
-    <input
-      type="text"
-      id="vacancy-search"
-      class="vacancy-search"
-      placeholder="Поиск..."
-      autocomplete="off"
-    />
-    <button type="button" id="vacancy-search-clear" class="search-clear" title="Очистить" hidden>×</button>
-  </div>
+<div class="tabs vacancy-tabs">
+<button type="button" data-status="pending" class="tab active">На проверке</button>
+<button type="button" data-status="approved" class="tab">Подходят</button>
+<button type="button" data-status="rejected" class="tab">Отклонённые</button>
+</div>
+<div class="search-bar-wrap">
+<input
+type="text"
+id="vacancy-search"
+class="vacancy-search"
+placeholder="Поиск..."
+autocomplete="off"
+/>
+<button type="button" id="vacancy-search-clear" class="search-clear" title="Очистить" hidden>×</button>
+</div>
+<button
+type="button"
+id="btn-refresh-section"
+class="btn-refresh-section"
+title="Обновить незагруженные вакансии в текущем разделе"
+hidden
+>
+<span class="refresh-icon">🔄</span>
+<span class="refresh-count"></span>
+</button>
 </div>
 </header>
 <main id="list"></main>

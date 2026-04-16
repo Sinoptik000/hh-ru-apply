@@ -153,10 +153,14 @@ async function scrapeVacancyCard(page, vacancyUrl) {
       t('a[data-qa="vacancy-company-name"]') ||
       t('[data-qa="vacancy-serp__vacancy-employer"]');
     const salary = t('[data-qa="vacancy-salary"]');
-    let desc =
-      t('[data-qa="vacancy-description"]') ||
-      t('.vacancy-description') ||
-      t('[itemprop="description"]');
+let desc =
+ t('[data-qa="vacancy-description"]') ||
+ t('[data-qa="vacancy-view-vacancyDescription"]') ||
+ t('.vacancy-description') ||
+ t('.vacancy-section') ||
+ t('[itemprop="description"]') ||
+ t('.bloko-text') ||
+ document.querySelector('[class*="vacancy-description"]')?.textContent?.replace(/\s+/g, ' ')?.trim() || '';
     if (desc.length > 3500) desc = `${desc.slice(0, 3500)}…`;
     return { title, company, salary, desc };
   });
