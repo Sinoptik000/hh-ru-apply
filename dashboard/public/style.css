@@ -309,6 +309,7 @@ h1 {
   border-color: var(--accent);
 }
 
+/* Legacy tabs (используйте Tabs.css для новых вариантов) */
 .tabs {
   display: flex;
   gap: 0.5rem;
@@ -330,6 +331,8 @@ h1 {
   color: var(--text);
   border-color: var(--accent);
 }
+
+/* Устаревший .tabs-row — перенесён в Tabs.css */
 
 .hint {
   color: var(--muted);
@@ -1271,8 +1274,10 @@ h1 {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
   padding: 0 1.5rem 0.75rem;
+  scrollbar-width: thin;
 }
 
 /* Search bar inline */

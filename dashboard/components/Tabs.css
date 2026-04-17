@@ -1,0 +1,87 @@
+/* ==========================================================================
+   TABS COMPONENT — Underline variant (подчёркивание снизу)
+   Элементы: Вручную, На проверке, Подходят, Отклонённые + Badge
+   ========================================================================== */
+
+/* Контейнер вкладок */
+.tabs-underlined {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+}
+
+/* Обёртка каждой вкладки */
+.tab-underlined-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+/* Подчёркивание активной вкладки */
+.tab-underlined-item::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transition: transform 0.25s ease;
+}
+
+/* Hover состояние */
+.tab-underlined-item:hover {
+  color: var(--text);
+}
+
+.tab-underlined-item:hover::after {
+  transform: scaleX(0.5);
+  background: var(--muted);
+}
+
+/* Активная (выбранная) вкладка */
+.tab-underlined-item.active {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.tab-underlined-item.active::after {
+  transform: scaleX(1);
+}
+
+/* Badge (счётчик) */
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.25rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.tab-underlined-item.active .tab-badge {
+  background: rgba(124, 183, 255, 0.15);
+  color: var(--accent);
+}
+
+.tab-underlined-item:hover .tab-badge {
+  background: var(--panel);
+}

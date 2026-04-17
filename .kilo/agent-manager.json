@@ -1,4 +1,21 @@
 {
-  "worktrees": {},
-  "sessions": {}
+  "worktrees": {
+    "wt-1776432307195-1": {
+      "branch": "topaz-meteorology",
+      "path": "c:\\Users\\User\\Documents\\Projects\\hh-ru-apply\\.kilo\\worktrees\\topaz-meteorology",
+      "parentBranch": "main",
+      "createdAt": "2026-04-17T13:25:07.195Z",
+      "remote": "origin",
+      "label": "Исправление позиции поля Поиск в Tabs (fork #1)"
+    }
+  },
+  "sessions": {
+    "ses_2646220d4ffeDjuLl27i4ROuk5": {
+      "worktreeId": "wt-1776432307195-1",
+      "createdAt": "2026-04-17T13:25:08.256Z"
+    }
+  },
+  "worktreeOrder": [
+    "wt-1776432307195-1"
+  ]
 }

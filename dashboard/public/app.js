@@ -1,7 +1,7 @@
 const listEl = document.getElementById('list');
 const tpl = document.getElementById('card-tpl');
 
-const vacancyTabsEl = document.querySelector('.vacancy-tabs');
+const vacancyTabsEl = document.querySelector('.tabs-underlined');
 
 let currentStatus = 'pending';
 let currentSearchQuery = '';
@@ -1041,7 +1041,11 @@ function clearSearch() {
 
 function renderVacancyList() {
   const items = cachedItems[currentStatus];
-  if (items === null) return;
+  if (items === null || items === undefined) {
+    listEl.innerHTML = '<p class="empty">Раздел «Вручную» не поддерживается.</p>';
+    syncVacancyTabs();
+    return;
+  }
 
   listEl.innerHTML = '';
 
@@ -1071,14 +1075,24 @@ updateRefreshSectionButton();
 }
 
 function syncVacancyTabs() {
-vacancyTabsEl.querySelectorAll('.tab').forEach((b) => {
-const status = b.dataset.status;
-const count = vacancyCounts[status] ?? 0;
-const baseLabel = b.dataset.baseLabel || b.textContent.replace(/\s*\(\d+\)\s*$/, '');
-if (!b.dataset.baseLabel) b.dataset.baseLabel = baseLabel;
-b.textContent = `${baseLabel} (${count})`;
-b.classList.toggle('active', status === currentStatus);
-});
+  const tabItems = vacancyTabsEl.querySelectorAll('[class*="tab-"]:not(.tab-badge)');
+  tabItems.forEach((b) => {
+    if (!b.dataset.status) return;
+    const status = b.dataset.status;
+    const count = vacancyCounts[status] ?? 0;
+
+    // Обновляем badge если есть
+    const badge = b.querySelector('.tab-badge');
+    if (badge) {
+      badge.textContent = count;
+      badge.dataset.count = count;
+    }
+
+    // Обновляем active состояние
+    const isActive = status === currentStatus;
+    b.classList.toggle('active', isActive);
+    b.setAttribute('aria-selected', isActive);
+  });
 }
 
 function updateRefreshSectionButton() {

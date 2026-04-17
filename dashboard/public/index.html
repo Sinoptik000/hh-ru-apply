@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>hh — очередь вакансий</title>
     <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/components/Tabs.css" />
   </head>
   <body>
     <header class="top">
@@ -42,11 +43,24 @@
         </div>
       </div>
 <div class="tabs-row">
-<div class="tabs vacancy-tabs">
-<button type="button" data-status="pending" class="tab active">На проверке</button>
-<button type="button" data-status="approved" class="tab">Подходят</button>
-<button type="button" data-status="rejected" class="tab">Отклонённые</button>
-</div>
+  <div class="tabs tabs-underlined" role="tablist">
+    <button type="button" class="tab tab-underlined-item" role="tab" data-status="manual">
+      Вручную
+      <span class="tab-badge" data-count="manual">0</span>
+    </button>
+    <button type="button" class="tab tab-underlined-item active" role="tab" data-status="pending">
+      На проверке
+      <span class="tab-badge" data-count="pending">0</span>
+    </button>
+    <button type="button" class="tab tab-underlined-item" role="tab" data-status="approved">
+      Подходят
+      <span class="tab-badge" data-count="approved">0</span>
+    </button>
+    <button type="button" class="tab tab-underlined-item" role="tab" data-status="rejected">
+      Отклонённые
+      <span class="tab-badge" data-count="rejected">0</span>
+    </button>
+  </div>
 <div class="search-bar-wrap">
 <input
 type="text"
