@@ -15,14 +15,14 @@ loadEnv();
 
 import { ROOT, DATA_DIR } from '../lib/paths.mjs';
 import { loadPreferences } from '../lib/preferences.mjs';
-import { parseVacancyPage, vacancyIdFromUrl } from '../lib/vacancy-parse.mjs';
+import { vacancyIdFromUrl } from '../lib/vacancy-parse.mjs';
 import { runHardFilters } from '../lib/filters.mjs';
-import { loadCvBundle } from '../lib/cv-load.mjs';
-import { getOpenRouterApiKey, scoreVacancyWithOpenRouter } from '../lib/openrouter-score.mjs';
-import { addVacancyRecord, knownVacancyIds } from '../lib/store.mjs';
+import { addVacancyRecord, knownVacancyIds, getVacancyRecord, updateVacancyRecord } from '../lib/store.mjs';
 
 const PROGRESS_FILE = path.join(DATA_DIR, 'add-vacancy-progress.json');
-const headless = process.env.HH_HEADLESS === '1';
+// Для процесса "Добавление вакансии" по умолчанию работаем в фоне (без окна браузера).
+// Можно принудительно вернуть окно только для этого процесса: HH_ADD_VACANCY_HEADLESS=0.
+const headless = process.env.HH_ADD_VACANCY_HEADLESS !== '0';
 
 function updateProgress(updates) {
   try {
@@ -52,13 +52,23 @@ function updateProgress(updates) {
   }
 }
 
+function getArgValue(name) {
+  const prefix = `--${name}=`;
+  const arg = process.argv.find((a) => a.startsWith(prefix));
+  if (!arg) return null;
+  return arg.slice(prefix.length);
+}
+
 function parseArgs() {
-  const urlArg = process.argv.find(a => a.startsWith('--url='));
-  if (!urlArg) {
-    console.error('Usage: node add-vacancy-worker.mjs --url=<vacancy-url>');
+  const url = getArgValue('url');
+  if (!url) {
+    console.error('Usage: node add-vacancy-worker.mjs --url=<vacancy-url> [--record-id=<id>]');
     process.exit(1);
   }
-  return urlArg.split('=')[1];
+  return {
+    vacancyUrl: url,
+    recordId: getArgValue('record-id'),
+  };
 }
 
 function looksLikeLoginUrl(url) {
@@ -131,7 +141,7 @@ let description =
 }
 
 async function main() {
-  const vacancyUrl = parseArgs();
+  const { vacancyUrl, recordId } = parseArgs();
   const vacancyId = vacancyIdFromUrl(vacancyUrl);
 
   if (!vacancyId) {
@@ -142,13 +152,6 @@ async function main() {
   updateProgress({ url: vacancyUrl, vacancyId, step: 'clipboard', percent: 10, message: 'Проверка сессии…' });
 
   const prefs = loadPreferences();
-
-  const cvBundle = await loadCvBundle();
-  for (const w of cvBundle.warnings) console.warn('[CV]', w);
-  if (!cvBundle.text.trim()) {
-    updateProgress({ error: 'Нет текста CV — положите .pdf или .txt в папку CV/', step: 'clipboard', percent: 0 });
-    process.exit(1);
-  }
 
 updateProgress({ step: 'parsing', percent: 20, message: 'Открытие браузера…' });
 
@@ -225,51 +228,12 @@ updateProgress({ step: 'parsing', percent: 25, message: 'Навигация…' 
       process.exit(0);
     }
 
-    updateProgress({ step: 'scoring', percent: 60, message: 'Анализ ИИ…' });
-
-    let llm = {
-      score: 0,
-      scoreVacancy: 0,
-      scoreCvMatch: 0,
-      scoreOverall: 0,
-      summary: '',
-      risks: '',
-      matchCv: 'unknown',
-      tags: [],
-      providerModel: null,
-    };
-
-    if (getOpenRouterApiKey()) {
-      try {
-        llm = await withTimeout(
-          scoreVacancyWithOpenRouter(
-            {
-              title: parsed.title,
-              company: parsed.company,
-              salaryRaw: parsed.salaryRaw,
-              description: parsed.description,
-              url: vacancyUrl,
-            },
-            cvBundle,
-            prefs
-          ),
-          120000,
-          'scoreVacancyWithOpenRouter'
-        );
-        updateProgress({ step: 'scoring', percent: 80, message: 'ИИ: ' + (llm.scoreOverall ?? llm.score ?? 0) });
-      } catch (e) {
-        console.error(' OpenRouter error:', e.message);
-        llm.summary = `Ошибка OpenRouter: ${e.message}`;
-      }
-    } else {
-      llm.summary = '(OpenRouter_API_KEY не настроен — оценка пропущена)';
-    }
-
-    updateProgress({ step: 'saving', percent: 90, message: 'Сохранение…' });
+    updateProgress({ step: 'saving', percent: 70, message: 'Сохранение…' });
 
     const known = knownVacancyIds();
-    if (known.has(vacancyId)) {
-      updateProgress({ error: 'Эта вакансия уже есть в очереди', step: 'saving', percent: 90 });
+    const existingById = recordId ? getVacancyRecord(recordId) : null;
+    if (!existingById && known.has(vacancyId)) {
+      updateProgress({ error: 'Эта вакансия уже есть в очереди', step: 'saving', percent: 70 });
       await Promise.race([
         browser.close(),
         new Promise(r => setTimeout(() => r('timeout'), 3000))
@@ -277,8 +241,11 @@ updateProgress({ step: 'parsing', percent: 25, message: 'Навигация…' 
       process.exit(0);
     }
 
-    const record = {
-      id: crypto.randomUUID(),
+    const summaryNote = !filter.pass && filter.reason
+      ? `Добавлено вручную. Предупреждение фильтра: ${filter.reason}`
+      : 'Добавлено вручную без авто-оценки LLM.';
+
+    const patch = {
       vacancyId,
       url: vacancyUrl,
       searchQuery: '(добавлена вручную)',
@@ -293,29 +260,37 @@ updateProgress({ step: 'parsing', percent: 25, message: 'Навигация…' 
       languages: parsed.languages || [],
       englishLevel: (parsed.languages || []).find(l => /английск|english/i.test(l.name || ''))?.level || null,
       descriptionPreview: parsed.description.slice(0, 600),
-      descriptionForLlm: parsed.description.slice(0, 6000),
-      llmProvider: 'openrouter',
-      openRouterModel: llm.providerModel || null,
-      scoreVacancy: llm.scoreVacancy,
-      scoreCvMatch: llm.scoreCvMatch,
-      scoreOverall: llm.scoreOverall,
-      geminiScore: llm.scoreOverall ?? llm.score,
-      geminiSummary: llm.summary,
-      geminiRisks: llm.risks,
-      geminiMatchCv: llm.matchCv,
-      geminiTags: llm.tags,
-      status: 'approved',
+      descriptionForLlm: '',
+      llmProvider: 'manual',
+      openRouterModel: null,
+      scoreVacancy: null,
+      scoreCvMatch: null,
+      scoreOverall: null,
+      geminiScore: null,
+      geminiSummary: summaryNote,
+      geminiRisks: '',
+      geminiMatchCv: 'unknown',
+      geminiTags: ['ручное добавление'],
+      status: 'manual',
       feedbackReason: '',
-      createdAt: new Date().toISOString(),
-      updatedAt: null,
     };
 
-    const added = addVacancyRecord(record);
-
-    if (added) {
-      updateProgress({ step: 'saving', percent: 100, message: 'Готово!', done: true, recordId: record.id });
+    let savedRecordId = recordId || crypto.randomUUID();
+    if (existingById) {
+      updateVacancyRecord(savedRecordId, patch);
+      updateProgress({ step: 'saving', percent: 100, message: 'Готово!', done: true, recordId: savedRecordId });
     } else {
-      updateProgress({ error: 'Вакансия уже была в очереди', step: 'saving', percent: 90 });
+      const added = addVacancyRecord({
+        id: savedRecordId,
+        createdAt: new Date().toISOString(),
+        updatedAt: null,
+        ...patch,
+      });
+      if (added) {
+        updateProgress({ step: 'saving', percent: 100, message: 'Готово!', done: true, recordId: savedRecordId });
+      } else {
+        updateProgress({ error: 'Вакансия уже была в очереди', step: 'saving', percent: 70 });
+      }
     }
 
     // Force-close browser — don't wait forever

@@ -16,10 +16,10 @@ let draftModalState = null;
 let applyLogRefreshTimer = null;
 
 /** Счётчики по статусам */
-let vacancyCounts = { pending: 0, approved: 0, rejected: 0 };
+let vacancyCounts = { manual: 0, pending: 0, approved: 0, rejected: 0 };
 
 /** Кэш записей по статусам */
-let cachedItems = { pending: null, approved: null, rejected: null };
+let cachedItems = { manual: null, pending: null, approved: null, rejected: null };
 
 /** Состояние для批量ного обновления секции */
 let bulkRefreshState = {
@@ -32,7 +32,7 @@ const BATCH_LIMIT = 20;
 
 /** Сброс кэша — требует перезагрузки при следующем load() */
 function invalidateCache() {
-  cachedItems = { pending: null, approved: null, rejected: null };
+  cachedItems = { manual: null, pending: null, approved: null, rejected: null };
 }
 
 // Проверяем активный sourcing при загрузке страницы
@@ -514,6 +514,37 @@ function hideAddProgress() {
   resetAddProgress();
 }
 
+async function focusAddedVacancy(recordId, url, highlight = true, targetStatus = 'manual') {
+  const statusToOpen = ['manual', 'pending', 'approved', 'rejected'].includes(targetStatus)
+    ? targetStatus
+    : 'approved';
+
+  if (currentSearchQuery) {
+    clearSearch();
+  }
+
+  if (currentStatus !== statusToOpen) {
+    vacancyTabsEl.querySelectorAll('.tab').forEach((b) => b.classList.remove('active'));
+    const approvedTab = vacancyTabsEl.querySelector(`[data-status="${statusToOpen}"]`);
+    if (approvedTab) approvedTab.classList.add('active');
+    currentStatus = statusToOpen;
+    listEl.innerHTML = '';
+  }
+
+  invalidateCache();
+  await load(true);
+
+  const selector = recordId
+    ? `[data-record-id="${recordId}"]`
+    : `[data-vacancy-url="${url}"]`;
+  const newCard = document.querySelector(selector);
+  if (!newCard) return;
+  newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  if (!highlight) return;
+  newCard.classList.add('card--new-highlight');
+  setTimeout(() => newCard.classList.remove('card--new-highlight'), 2000);
+}
+
 document.querySelector('.btn-add-vacancy')?.addEventListener('click', async () => {
   const btn = document.querySelector('.btn-add-vacancy');
   btn.disabled = true;
@@ -534,7 +565,7 @@ document.querySelector('.btn-add-vacancy')?.addEventListener('click', async () =
     return;
   }
 
-  if (!/^https?:\/\/hh\.ru\/vacancy\/\d+/i.test(trimmed)) {
+  if (!/^https?:\/\/([^.]+\.)?hh\.ru\/vacancy\/\d+(?:[/?#].*)?$/i.test(trimmed)) {
     showToast('Ссылка не похожа на вакансию hh.ru: ' + trimmed.slice(0, 60), 'bad');
     btn.disabled = false;
     return;
@@ -546,15 +577,21 @@ document.querySelector('.btn-add-vacancy')?.addEventListener('click', async () =
       body: JSON.stringify({ url: trimmed }),
     });
 
+    await focusAddedVacancy(res.id, trimmed, true, res.status || 'manual');
+    showToast('Карточка добавлена. Данные загружаются…', 'good');
     startAddVacancyPolling(trimmed, res.id);
-
-} catch (e) {
-  showToast(`Ошибка: ${e.message}`, 'bad');
-  btn.disabled = false;
- }
+  } catch (e) {
+    if (e.status === 409 && e.payload?.recordId) {
+      await focusAddedVacancy(e.payload.recordId, trimmed, false, e.payload.status);
+      showToast('Эта вакансия уже есть в очереди', 'neutral');
+    } else {
+      showToast(`Ошибка: ${e.message}`, 'bad');
+    }
+    btn.disabled = false;
+  }
 });
 
-function startAddVacancyPolling(url, tempId) {
+function startAddVacancyPolling(url, recordId) {
   if (addVacancyPollInterval) {
     clearInterval(addVacancyPollInterval);
   }
@@ -565,6 +602,8 @@ function startAddVacancyPolling(url, tempId) {
   };
   const expectedVacancyId = vacancyIdFromUrl(url);
 
+  showAddProgress(5, 'Запуск…');
+
   addVacancyPollInterval = setInterval(async () => {
     try {
       const progress = await api('/api/vacancy/add-progress');
@@ -572,60 +611,30 @@ function startAddVacancyPolling(url, tempId) {
       // Debug log
       console.log('[add-vacancy poll]', JSON.stringify(progress));
 
+      if (progress.percent != null) {
+        showAddProgress(progress.percent, progress.message || `${progress.percent}%`);
+      }
+
       if (progress.vacancyId && progress.vacancyId !== expectedVacancyId) {
         clearInterval(addVacancyPollInterval);
         addVacancyPollInterval = null;
+        hideAddProgress();
+        const btn = document.querySelector('.btn-add-vacancy');
+        btn.disabled = false;
         return;
       }
 
   if (progress.step === 'saving' && progress.percent === 100) {
   clearInterval(addVacancyPollInterval);
   addVacancyPollInterval = null;
+  hideAddProgress();
 
 setTimeout(async () => {
-  showToast('Вакансия добавлена!', 'good');
+  showToast('Вакансия загружена', 'good');
 
     const btn = document.querySelector('.btn-add-vacancy');
     btn.disabled = false;
-
-    if (currentStatus !== 'approved') {
-      vacancyTabsEl.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-      const approvedTab = vacancyTabsEl.querySelector('[data-status="approved"]');
-      if (approvedTab) approvedTab.classList.add('active');
-      currentStatus = 'approved';
-      listEl.innerHTML = '';
-    }
-
-    invalidateCache();
-    await load(true);
-
-    setTimeout(async () => {
-      const newCard = document.querySelector(`[data-vacancy-url="${url}"]`);
-      if (newCard) {
-        newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        newCard.classList.add('card--new-highlight');
-        setTimeout(() => newCard.classList.remove('card--new-highlight'), 2000);
-
-        const item = Object.values(cachedItems).flat().find(v => v.url === url);
-        if (item?.id) {
-          try {
-            await requestCoverLetterGenerate(item.id, false);
-            showToast('Сопроводительное сгенерировано', 'good');
-          } catch (e) {
-            if (e.status === 409) {
-              try {
-                await requestCoverLetterGenerate(item.id, true);
-                showToast('Новые варианты готовы', 'good');
-              } catch (e2) {
-                console.error('Cover letter generation failed:', e2.message);
-              }
-            } else {
-              console.error('Cover letter generation failed:', e.message);
-            }
-          }
-        }
-      }
-    }, 100);
+    await focusAddedVacancy(recordId || progress.recordId || null, url, false, 'manual');
   }, 400);
 
   return;
@@ -634,6 +643,7 @@ setTimeout(async () => {
 if (progress.error) {
   clearInterval(addVacancyPollInterval);
   addVacancyPollInterval = null;
+  hideAddProgress();
   showToast(`Ошибка: ${progress.error}`, 'bad');
   const btn = document.querySelector('.btn-add-vacancy');
   btn.disabled = false;
@@ -1018,6 +1028,9 @@ function renderCard(item) {
 if (item.url) {
   node.dataset.vacancyUrl = item.url;
 }
+if (item.id) {
+  node.dataset.recordId = item.id;
+}
 
 return node;
 }
@@ -1039,10 +1052,152 @@ function clearSearch() {
   renderVacancyList();
 }
 
+/** UI для раздела "Вручную" */
+function renderManualTabUI() {
+  const cached = cachedItems.manual;
+
+  listEl.innerHTML = `
+    <div class="manual-container">
+      <div class="manual-input-section">
+        <label class="manual-label" for="manual-url">URL вакансии hh.ru</label>
+        <div class="manual-input-row">
+          <input
+            type="url"
+            id="manual-url"
+            class="manual-url-input"
+            placeholder="https://hh.ru/vacancy/12345678"
+            value="${cached?.url || ''}"
+          />
+          <button type="button" class="btn btn-generate" id="btn-generate-letter">
+            Сгенерировать
+          </button>
+        </div>
+      </div>
+
+      <div class="manual-variants-section" ${!cached?.variants ? 'style="display:none"' : ''}>
+        <div class="manual-variants-header">
+          <span class="manual-variants-title">Варианты письма</span>
+          <div class="manual-variant-tabs">
+            <button type="button" class="manual-variant-tab active" data-variant="0">Вариант 1</button>
+            <button type="button" class="manual-variant-tab" data-variant="1">Вариант 2</button>
+            <button type="button" class="manual-variant-tab" data-variant="2">Вариант 3</button>
+          </div>
+        </div>
+
+        <div class="manual-letter-block">
+          <div class="manual-letter-text">${cached?.variants?.[0] || ''}</div>
+          <button type="button" class="btn-copy-letter" title="Копировать">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            Копировать
+          </button>
+        </div>
+      </div>
+
+      <div class="manual-finish-section" ${!cached?.variants ? 'style="display:none"' : ''}>
+        <button type="button" class="btn btn-finish" id="btn-finish-manual">
+          Завершить → Отправить в «Подходят»
+        </button>
+      </div>
+    </div>
+  `;
+
+  initManualTabHandlers();
+}
+
+let manualTabState = { url: '', variants: null, selectedVariant: 0 };
+
+function initManualTabHandlers() {
+  const generateBtn = document.getElementById('btn-generate-letter');
+  const urlInput = document.getElementById('manual-url');
+  const finishBtn = document.getElementById('btn-finish-manual');
+  const copyBtn = document.querySelector('.btn-copy-letter');
+  const variantTabs = document.querySelectorAll('.manual-variant-tab');
+
+  generateBtn?.addEventListener('click', async () => {
+    const url = urlInput?.value?.trim();
+    if (!url) {
+      showToast('Вставьте URL вакансии', 'bad');
+      return;
+    }
+    generateBtn.disabled = true;
+    generateBtn.textContent = 'Генерация...';
+
+    try {
+      const response = await fetch('/api/generate-letter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+      const data = await response.json();
+
+      cachedItems.manual = { url, variants: data.variants };
+      manualTabState = { url, variants: data.variants, selectedVariant: 0 };
+
+      document.querySelector('.manual-variants-section').style.display = '';
+      document.querySelector('.manual-finish-section').style.display = '';
+
+      const letterText = document.querySelector('.manual-letter-text');
+      if (letterText) letterText.textContent = data.variants[0];
+
+      showToast('Письмо сгенерировано', 'good');
+    } catch (e) {
+      showToast('Ошибка генерации: ' + e.message, 'bad');
+    } finally {
+      generateBtn.disabled = false;
+      generateBtn.textContent = 'Сгенерировать';
+    }
+  });
+
+  variantTabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      variantTabs.forEach((t) => t.classList.remove('active'));
+      tab.classList.add('active');
+      const idx = parseInt(tab.dataset.variant);
+      manualTabState.selectedVariant = idx;
+      const letterText = document.querySelector('.manual-letter-text');
+      if (letterText && manualTabState.variants) {
+        letterText.textContent = manualTabState.variants[idx];
+      }
+    });
+  });
+
+  copyBtn?.addEventListener('click', async () => {
+    const text = document.querySelector('.manual-letter-text')?.textContent;
+    if (!text) return;
+    await navigator.clipboard.writeText(text);
+    showToast('Скопировано!', 'good');
+  });
+
+  finishBtn?.addEventListener('click', async () => {
+    if (!manualTabState.variants) return;
+    const { url, variants, selectedVariant } = manualTabState;
+
+    try {
+      const response = await fetch('/api/approve-manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, letter: variants[selectedVariant] })
+      });
+
+      cachedItems.manual = null;
+      cachedItems.approved = null;
+
+      showToast('Отправлено в «Подходят»', 'good');
+      load().then(renderVacancyList);
+    } catch (e) {
+      showToast('Ошибка: ' + e.message, 'bad');
+    }
+  });
+}
+
 function renderVacancyList() {
   const items = cachedItems[currentStatus];
+
   if (items === null || items === undefined) {
-    listEl.innerHTML = '<p class="empty">Раздел «Вручную» не поддерживается.</p>';
+    listEl.innerHTML = '';
     syncVacancyTabs();
     return;
   }
@@ -1206,7 +1361,7 @@ async function load(forceRefresh = false) {
       const items = cachedItems[currentStatus];
       vacancyCounts[currentStatus] = items.length;
       // Обновляем счётчики для остальных статусов из кэша если есть
-      for (const status of ['pending', 'approved', 'rejected']) {
+      for (const status of ['manual', 'pending', 'approved', 'rejected']) {
         if (cachedItems[status] !== null && status !== currentStatus) {
           vacancyCounts[status] = cachedItems[status].length;
         }
@@ -1217,7 +1372,7 @@ return;
 
     // Загружаем все записи параллельно для подсчёта + отображения
     const allData = await Promise.all(
-      ['pending', 'approved', 'rejected'].map((status) =>
+      ['manual', 'pending', 'approved', 'rejected'].map((status) =>
         api(`/api/vacancies?status=${encodeURIComponent(status)}`).then(({ items }) => ({ status, items }))
       )
     );
@@ -1237,19 +1392,19 @@ renderVacancyList();
   }
 }
 
-vacancyTabsEl.querySelectorAll('.tab').forEach((btn) => {
-btn.addEventListener('click', () => {
-vacancyTabsEl.querySelectorAll('.tab').forEach((b) => b.classList.remove('active'));
-btn.classList.add('active');
-currentStatus = btn.dataset.status;
-// Если данные уже в кэше — отображаем сразу, иначе загружаем
-if (cachedItems[currentStatus] !== null) {
-renderVacancyList();
-} else {
-load();
-}
-updateRefreshSectionButton();
-});
+vacancyTabsEl.querySelectorAll('.tab-underlined-item').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    vacancyTabsEl.querySelectorAll('.tab-underlined-item').forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentStatus = btn.dataset.status;
+    // Если данные уже в кэше — отображаем сразу, иначе загружаем
+    if (cachedItems[currentStatus] !== null) {
+      renderVacancyList();
+    } else {
+      load();
+    }
+    updateRefreshSectionButton();
+  });
 });
 
 syncVacancyTabs();

@@ -5,6 +5,7 @@
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { loadEnv } from '../lib/load-env.mjs';
@@ -14,6 +15,7 @@ import { ROOT, HH_APPLY_CHAT_LOG_FILE, DATA_DIR } from '../lib/paths.mjs';
 import { countApplyLaunchesLastHour, recordApplyLaunch } from '../lib/hh-apply-rate.mjs';
 import {
   loadQueue,
+  addVacancyRecord,
   updateVacancyRecord,
   getVacancyRecord,
   removeVacancyRecord,
@@ -29,6 +31,7 @@ import {
 } from '../lib/cover-letter-openrouter.mjs';
 import { appendCoverLetterUserEditSnippet } from '../lib/cover-letter-user-edits.mjs';
 import { fetchVacancyTextFromHh } from '../lib/refresh-vacancy-from-hh.mjs';
+import { vacancyIdFromUrl } from '../lib/vacancy-parse.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const STATIC_DIR = path.join(ROOT, 'dashboard', 'public');
@@ -568,8 +571,23 @@ if (req.method === 'POST' && pathname === '/api/vacancy/add-from-clipboard') {
     return sendJson(res, 400, { error: 'Invalid JSON' });
   }
   const { url } = body;
-  if (!url || typeof url !== 'string') {
+  const normalizedUrl = typeof url === 'string' ? url.trim() : '';
+  if (!normalizedUrl) {
     return sendJson(res, 400, { error: 'Нужен url' });
+  }
+  const vacancyId = vacancyIdFromUrl(normalizedUrl);
+  if (!vacancyId) {
+    return sendJson(res, 400, { error: 'Некорректный URL вакансии hh.ru' });
+  }
+
+  const existing = loadQueue().find((x) => x.vacancyId === vacancyId);
+  if (existing) {
+    return sendJson(res, 409, {
+      error: 'Эта вакансия уже есть в очереди',
+      recordId: existing.id,
+      status: existing.status,
+      alreadyExists: true,
+    });
   }
 
   const workerScript = path.join(ROOT, 'scripts', 'add-vacancy-worker.mjs');
@@ -577,30 +595,66 @@ if (req.method === 'POST' && pathname === '/api/vacancy/add-from-clipboard') {
     return sendJson(res, 500, { error: 'Скрипт add-vacancy-worker.mjs не найден' });
   }
 
+  // Создаём карточку сразу, чтобы пользователь видел её мгновенно.
+  const recordId = crypto.randomUUID();
+  addVacancyRecord({
+    id: recordId,
+    vacancyId,
+    url: normalizedUrl,
+    searchQuery: '(добавлена вручную)',
+    title: 'Загрузка вакансии…',
+    company: '',
+    salaryRaw: '',
+    salaryEstimate: null,
+    remoteNote: '',
+    salaryNote: '',
+    employment: '',
+    workplaceType: ['не указано'],
+    languages: [],
+    englishLevel: null,
+    descriptionPreview: 'Идёт загрузка данных вакансии…',
+    descriptionForLlm: '',
+    llmProvider: 'manual',
+    openRouterModel: null,
+    scoreVacancy: null,
+    scoreCvMatch: null,
+    scoreOverall: null,
+    geminiScore: null,
+    geminiSummary: 'Карточка создана. Данные обновятся автоматически.',
+    geminiRisks: '',
+    geminiMatchCv: 'unknown',
+    geminiTags: ['ручное добавление'],
+    status: 'manual',
+    feedbackReason: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: null,
+  });
+
   // Initialize progress file
   fs.mkdirSync(DATA_DIR, { recursive: true });
   fs.writeFileSync(ADD_VACANCY_PROGRESS_FILE, JSON.stringify({
-    url,
+    url: normalizedUrl,
+    vacancyId,
     step: 'clipboard',
     percent: 5,
     message: 'Запуск…',
     error: null,
     done: false,
-    recordId: null,
+    recordId,
   }), 'utf-8');
 
   // Spawn background child process
   const logFd = fs.openSync(path.join(DATA_DIR, 'add-vacancy-worker.log'), 'a');
-  spawn(process.execPath, [workerScript, `--url=${url}`], {
+  spawn(process.execPath, [workerScript, `--url=${normalizedUrl}`, `--record-id=${recordId}`], {
     cwd: ROOT,
     detached: true,
-    windowsHide: false,
+    windowsHide: true,
     stdio: ['ignore', logFd, logFd],
     env: process.env,
   });
   fs.closeSync(logFd);
 
-  return sendJson(res, 200, { ok: true, id: url });
+  return sendJson(res, 200, { ok: true, id: recordId, status: 'manual' });
 }
 
 if (req.method === 'GET' && pathname === '/api/vacancy/add-progress') {
