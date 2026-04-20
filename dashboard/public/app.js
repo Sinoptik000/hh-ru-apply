@@ -465,7 +465,7 @@ document.querySelector('.btn-sourcing')?.addEventListener('click', async () => {
   if (progressText) progressText.textContent = `0/${keywords.length}`;
 
   // Запускаем процесс
-  const scanLimit = 10; // default
+  const scanLimit = 30; // global limit per session
   
   try {
     const sourcingBtn = document.querySelector('.btn-sourcing');
@@ -485,7 +485,7 @@ document.querySelector('.btn-sourcing')?.addEventListener('click', async () => {
     if (progressWrap) progressWrap.hidden = true;
     const sourcingBtn = document.querySelector('.btn-sourcing');
     sourcingBtn.disabled = false;
-    sourcingBtn.textContent = '🔍 Sourcing';
+    sourcingBtn.textContent = 'Sourcing';
   }
 });
 
@@ -493,10 +493,10 @@ document.querySelector('.btn-sourcing')?.addEventListener('click', async () => {
 let addVacancyPollInterval = null;
 
 function resetAddProgress() {
- const fill = document.querySelector('.add-vacancy-progress-fill');
- const text = document.querySelector('.add-vacancy-progress-text');
- if (fill) fill.style.width = '0%';
- if (text) text.textContent = '0/0';
+  const fill = document.querySelector('.add-vacancy-progress-fill');
+  const text = document.querySelector('.add-vacancy-progress-text');
+  if (fill) fill.style.width = '0%';
+  if (text) text.textContent = '';
 }
 
 function showAddProgress(percent, message) {
@@ -505,7 +505,7 @@ function showAddProgress(percent, message) {
  const fill = document.querySelector('.add-vacancy-progress-fill');
  const text = document.querySelector('.add-vacancy-progress-text');
  if (fill) fill.style.width = `${percent}%`;
- if (text) text.textContent = message || '0/0';
+ if (text) text.textContent = message || '';
 }
 
 function hideAddProgress() {
@@ -717,23 +717,23 @@ function startSourcingPolling(total, sourcingBtn) {
       if (progressFill) {
         progressFill.style.width = `${progress.percent}%`;
       }
-      if (progressText) {
-        // Показываем вакансии: обработано/всего
-        progressText.textContent = `${progress.completed}/${progress.total}`;
-      }
+if (progressText) {
+      // Показываем вакансии: обработано/всего
+      progressText.textContent = progress.total > 0 ? `${progress.completed}/${progress.total}` : `${progress.completed}`;
+    }
 
-      // Если завершено - обновляем страницу
-      if (!progress.active && progress.percent === 100) {
+// Если завершено - обновляем страницу
+    if (!progress.active) {
         clearInterval(sourcingPollInterval);
         sourcingPollInterval = null;
         
         showToast(`Sourcing завершён! Найдено ${progress.total} вакансий`, 'good');
         
         // Включаем кнопку обратно
-        if (sourcingBtn) {
-          sourcingBtn.disabled = false;
-          sourcingBtn.textContent = '🔍 Sourcing';
-        }
+if (sourcingBtn) {
+      sourcingBtn.disabled = false;
+      sourcingBtn.textContent = 'Sourcing';
+    }
         
         // Скрываем прогресс-бар через 2 секунды и обновляем страницу
         const progressWrap = document.querySelector('.sourcing-progress-wrap');

@@ -47,6 +47,8 @@ let sourcingProgress = {
   keywordsCount: 0, // всего ключевых слов
   completedKeywords: 0, // завершено ключевых слов
   startedAt: null,
+  globalLimit: 30, // глобальный лимит собранных вакансий за сеанс
+  collectedCount: 0, // фактически собрано вакансий
 };
 
 // Функция для парсинга прогресса из лога
@@ -57,18 +59,19 @@ function updateProgressFromLog(progressLogFile) {
     const logContent = fs.readFileSync(progressLogFile, 'utf-8');
     
     // Ищем все паттерны "Найдено ссылок (до лимита N): X"
-    const foundMatches = logContent.match(/Найдено ссылок \(до лимита \d+\):\s+(\d+)/g);
-    if (foundMatches) {
-      // Суммируем все найденные вакансии из всех запросов
-      let newTotal = 0;
-      for (const match of foundMatches) {
-        const countMatch = match.match(/:\s*(\d+)$/);
-        if (countMatch) {
-          newTotal += parseInt(countMatch[1]);
-        }
+const foundMatches = logContent.match(/Найдено ссылок \(до лимита \d+\):\s+(\d+)/g);
+  if (foundMatches) {
+    // Суммируем все найденные вакансии из всех запросов
+    let newTotal = 0;
+    for (const match of foundMatches) {
+      const countMatch = match.match(/:\s*(\d+)$/);
+      if (countMatch) {
+        newTotal += parseInt(countMatch[1]);
       }
-      sourcingProgress.total = newTotal;
     }
+    sourcingProgress.total = newTotal;
+    sourcingProgress.collectedCount = newTotal;
+  }
     
     // Ищем все паттерны "[X/Y]" для каждого запроса
     // Нам нужно суммировать completed из всех завершенных запросов + текущий
@@ -741,17 +744,19 @@ if (req.method === 'GET' && pathname === '/api/vacancy/add-progress') {
       return sendJson(res, 500, { error: 'Скрипт scan-telegram.mjs не найден' });
     }
 
-    // Инициализируем прогресс
-    sourcingProgress = {
-      active: true,
-      total: 0, // будет накапливаться по мере нахождения вакансий
-      completed: 0,
-      currentKeyword: keywords[0],
-      currentKeywordTotal: 0,
-      keywordsCount: keywords.length,
-      completedKeywords: 0,
-      startedAt: new Date().toISOString(),
-    };
+// Инициализируем прогресс
+  sourcingProgress = {
+    active: true,
+    total: 0, // будет накапливаться по мере нахождения вакансий
+    completed: 0,
+    currentKeyword: keywords[0],
+    currentKeywordTotal: 0,
+    keywordsCount: keywords.length,
+    completedKeywords: 0,
+    startedAt: new Date().toISOString(),
+    globalLimit: scanLimit || 30,
+    collectedCount: 0,
+  };
 
     const logFile = path.join(DATA_DIR, 'sourcing.log');
     const header = `\n======== ${new Date().toISOString()} sourcing started ========\n`;
@@ -761,23 +766,32 @@ if (req.method === 'GET' && pathname === '/api/vacancy/add-progress') {
     const progressLogFile = path.join(DATA_DIR, 'sourcing-progress.log');
     fs.writeFileSync(progressLogFile, '', 'utf-8');
 
-    // Запускаем каждое ключевое слово отдельным процессом последовательно
-    const runKeyword = (index) => {
-      if (index >= keywords.length) {
-        // Все ключи обработаны
-        sourcingProgress.active = false;
-        sourcingProgress.currentKeyword = 'Завершено!';
-        return;
-      }
+// Запускаем каждое ключевое слово отдельным процессом последовательно
+  const runKeyword = (index) => {
+    // Проверяем глобальный лимит
+    if (sourcingProgress.collectedCount >= sourcingProgress.globalLimit) {
+      sourcingProgress.active = false;
+      sourcingProgress.currentKeyword = 'Лимит reached!';
+      return;
+    }
 
-      const keyword = keywords[index];
-      sourcingProgress.currentKeyword = keyword;
-      sourcingProgress.currentKeywordTotal = 0; // сброс для нового запроса
+    if (index >= keywords.length) {
+      // Все ключи обработаны
+      sourcingProgress.active = false;
+      sourcingProgress.currentKeyword = 'Завершено!';
+      return;
+    }
 
-      const logFd = fs.openSync(logFile, 'a');
-      const progressLogFd = fs.openSync(progressLogFile, 'a');
-const env = { ...process.env, HH_HEADLESS: '1' };
-  if (scanLimit) env.HH_SCAN_LIMIT = String(scanLimit);
+    const keyword = keywords[index];
+    sourcingProgress.currentKeyword = keyword;
+    sourcingProgress.currentKeywordTotal = 0; // сброс для нового запроса
+
+    const logFd = fs.openSync(logFile, 'a');
+    const progressLogFd = fs.openSync(progressLogFile, 'a');
+    const env = { ...process.env, HH_HEADLESS: '1' };
+    // Передаем оставшийся лимит вместо общего
+    const remainingLimit = Math.max(0, sourcingProgress.globalLimit - sourcingProgress.collectedCount);
+    if (remainingLimit > 0) env.HH_SCAN_LIMIT = String(remainingLimit);
 
       let child;
       try {
@@ -802,24 +816,34 @@ const env = { ...process.env, HH_HEADLESS: '1' };
         fs.closeSync(progressLogFd);
       }
 
-      child.on('exit', (code, signal) => {
-        const line = `\n--- keyword "${keyword}" exit code=${code} signal=${signal || ''} at ${new Date().toISOString()} ---\n`;
-        try {
-          fs.appendFileSync(logFile, line, 'utf-8');
-        } catch { /* ignore */ }
+child.on('exit', (code, signal) => {
+    const line = `\n--- keyword "${keyword}" exit code=${code} signal=${signal || ''} at ${new Date().toISOString()} ---\n`;
+    try {
+      fs.appendFileSync(logFile, line, 'utf-8');
+    } catch { /* ignore */ }
 
-        // Увеличиваем счетчик завершенных запросов
-        sourcingProgress.completedKeywords = index + 1;
+    // Увеличиваем счетчик завершенных запросов
+    sourcingProgress.completedKeywords = index + 1;
 
-        // Запускаем следующий ключ через паузу (чтобы не спамить hh.ru)
-        if (index + 1 < keywords.length) {
-          setTimeout(() => runKeyword(index + 1), 5000); // 5 секунд между запросами
-        } else {
-          // Последний ключ завершен
-          sourcingProgress.active = false;
-          sourcingProgress.currentKeyword = 'Завершено!';
-        }
-      });
+    // Обновляем собранное количество
+    sourcingProgress.collectedCount = sourcingProgress.total;
+
+    // Проверяем глобальный лимит
+    if (sourcingProgress.collectedCount >= sourcingProgress.globalLimit) {
+      sourcingProgress.active = false;
+      sourcingProgress.currentKeyword = 'Лимит reached!';
+      return;
+    }
+
+    // Запускаем следующий ключ через паузу (чтобы не спамить hh.ru)
+    if (index + 1 < keywords.length) {
+      setTimeout(() => runKeyword(index + 1), 5000); // 5 секунд между запросами
+    } else {
+      // Последний ключ завершен
+      sourcingProgress.active = false;
+      sourcingProgress.currentKeyword = 'Завершено!';
+    }
+  });
     };
 
     // Запускаем первый запрос
