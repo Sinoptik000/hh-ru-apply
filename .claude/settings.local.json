@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --check lib/vacancy-parse.mjs)",
+      "Bash(node --check lib/refresh-vacancy-from-hh.mjs)",
+      "Bash(node --check scripts/add-vacancy-worker.mjs)",
+      "Bash(node *)",
+      "Bash(npm run *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ]
+  }
+}

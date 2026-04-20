@@ -1,10 +1,10 @@
 {
-  "url": "https://hh.ru/vacancy/132290129?from=applicant_recommended&hhtmFrom=main",
-  "vacancyId": "132290129",
+  "url": "https://hh.ru/vacancy/131525180?query=%D0%9E%D0%BF%D0%B5%D1%80%D0%B0%D1%86%D0%B8%D0%BE%D0%BD%D0%BD%D1%8B%D0%B9+%D0%BC%D0%B5%D0%BD%D0%B5%D0%B4%D0%B6%D0%B5%D1%80&hhtmFrom=vacancy_search_list",
+  "vacancyId": "131525180",
   "step": "saving",
   "percent": 100,
   "message": "Готово!",
-  "error": null,
+  "error": "Эта вакансия уже есть в очереди",
   "done": true,
-  "recordId": "40387d0c-9fa1-4e13-b047-6977f6173780"
+  "recordId": "d694966e-4082-4e0e-bb1e-73b954256313"
 }
