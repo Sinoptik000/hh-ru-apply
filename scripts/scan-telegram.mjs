@@ -144,7 +144,8 @@ async function collectVacancyUrls(page) {
 
 async function scrapeVacancyCard(page, vacancyUrl) {
   await page.goto(vacancyUrl, { waitUntil: 'domcontentloaded', timeout: 60_000 });
-  await page.waitForTimeout(1200);
+  // Ждём дополнительно — описание подгружается динамически
+  await page.waitForTimeout(2500);
   return page.evaluate(() => {
     const t = (sel) => document.querySelector(sel)?.textContent?.replace(/\s+/g, ' ')?.trim() || '';
     const title = t('h1[data-qa="vacancy-title"]') || t('h1');
@@ -153,14 +154,20 @@ async function scrapeVacancyCard(page, vacancyUrl) {
       t('a[data-qa="vacancy-company-name"]') ||
       t('[data-qa="vacancy-serp__vacancy-employer"]');
     const salary = t('[data-qa="vacancy-salary"]');
-let desc =
- t('[data-qa="vacancy-description"]') ||
- t('[data-qa="vacancy-view-vacancyDescription"]') ||
- t('.vacancy-description') ||
- t('.vacancy-section') ||
- t('[itemprop="description"]') ||
- t('.bloko-text') ||
- document.querySelector('[class*="vacancy-description"]')?.textContent?.replace(/\s+/g, ' ')?.trim() || '';
+    let desc =
+      t('[data-qa="vacancy-description"]') ||
+      t('[data-qa="vacancy-view-vacancyDescription"]') ||
+      t('.vacancy-description') ||
+      t('.vacancy-section') ||
+      t('[itemprop="description"]') ||
+      t('.bloko-text') ||
+      document.querySelector('[class*="vacancy-description"]')?.textContent?.replace(/\s+/g, ' ')?.trim() ||
+      (() => {
+        const article = document.querySelector('article') || document.querySelector('section[role="main"]') || document.querySelector('main');
+        if (!article) return '';
+        return article.textContent.replace(/\s+/g, ' ').trim().slice(0, 15000);
+      })() ||
+      '';
     if (desc.length > 3500) desc = `${desc.slice(0, 3500)}…`;
     return { title, company, salary, desc };
   });

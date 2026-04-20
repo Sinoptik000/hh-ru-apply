@@ -560,6 +560,39 @@ child = spawn(process.execPath, [scriptPath, `--id=${id}`], {
 return sendJson(res, 200, { ok: true });
 }
 
+if (req.method === 'POST' && pathname === '/api/vacancy/complete-manual') {
+    let body;
+    try {
+      body = JSON.parse(await readBody(req));
+    } catch {
+      return sendJson(res, 400, { error: 'Invalid JSON' });
+    }
+    const { id, approvedText } = body;
+    if (!id) return sendJson(res, 400, { error: 'Нужен id' });
+
+    const rec = getVacancyRecord(id);
+    if (!rec) return sendJson(res, 404, { error: 'Запись не найдена' });
+    if (rec.status !== 'manual') {
+      return sendJson(res, 409, { error: `Ожидался статус manual, получен: ${rec.status}` });
+    }
+
+    // Update vacancy: change status to 'approved', set coverLetter to approved
+    const now = new Date().toISOString();
+    const patch = {
+      status: 'approved',
+      coverLetter: {
+        status: 'approved',
+        variants: rec.coverLetter?.variants || [],
+        approvedText: String(approvedText || '').trim(),
+        openRouterModel: rec.coverLetter?.openRouterModel ?? null,
+        updatedAt: now,
+      },
+    };
+    updateVacancyRecord(id, patch);
+
+    return sendJson(res, 200, { ok: true, status: 'approved' });
+  }
+
 // --- Add vacancy from clipboard ---
 const ADD_VACANCY_PROGRESS_FILE = path.join(DATA_DIR, 'add-vacancy-progress.json');
 

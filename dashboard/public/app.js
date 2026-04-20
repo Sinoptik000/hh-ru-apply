@@ -545,6 +545,9 @@ async function focusAddedVacancy(recordId, url, highlight = true, targetStatus =
   setTimeout(() => newCard.classList.remove('card--new-highlight'), 2000);
 }
 
+/** Clipboard-add state: recordId of vacancy being added from clipboard */
+let clipboardAddRecordId = null;
+
 document.querySelector('.btn-add-vacancy')?.addEventListener('click', async () => {
   const btn = document.querySelector('.btn-add-vacancy');
   btn.disabled = true;
@@ -577,12 +580,38 @@ document.querySelector('.btn-add-vacancy')?.addEventListener('click', async () =
       body: JSON.stringify({ url: trimmed }),
     });
 
-    await focusAddedVacancy(res.id, trimmed, true, res.status || 'manual');
-    showToast('Карточка добавлена. Данные загружаются…', 'good');
+    // Switch to manual tab immediately and show the form with the URL
+    vacancyTabsEl.querySelectorAll('.tab').forEach((b) => b.classList.remove('active'));
+    const manualTab = vacancyTabsEl.querySelector('[data-status="manual"]');
+    if (manualTab) manualTab.classList.add('active');
+    currentStatus = 'manual';
+    listEl.innerHTML = '';
+
+    // Pre-fill URL and start polling
+    clipboardAddRecordId = res.id;
+    manualTabState.vacancyId = res.id;
+    manualTabState.url = trimmed;
+    manualTabState.parsing = true;
+    manualTabState.error = null;
+    manualTabState.variants = null;
+    manualTabState.selectedVariant = 0;
+
+    renderManualTabUI();
+    // Populate the URL in the input field
+    const urlInput = document.getElementById('manual-url');
+    if (urlInput) urlInput.value = trimmed;
+
+    showToast('Вакансия загружается…', 'good');
     startAddVacancyPolling(trimmed, res.id);
   } catch (e) {
     if (e.status === 409 && e.payload?.recordId) {
-      await focusAddedVacancy(e.payload.recordId, trimmed, false, e.payload.status);
+      // Vacancy already exists — switch to its tab
+      vacancyTabsEl.querySelectorAll('.tab').forEach((b) => b.classList.remove('active'));
+      const tabToOpen = vacancyTabsEl.querySelector(`[data-status="${e.payload.status}"]`);
+      if (tabToOpen) tabToOpen.classList.add('active');
+      currentStatus = e.payload.status;
+      invalidateCache();
+      await load(true);
       showToast('Эта вакансия уже есть в очереди', 'neutral');
     } else {
       showToast(`Ошибка: ${e.message}`, 'bad');
@@ -629,12 +658,23 @@ function startAddVacancyPolling(url, recordId) {
   addVacancyPollInterval = null;
   hideAddProgress();
 
-setTimeout(async () => {
-  showToast('Вакансия загружена', 'good');
-
+  setTimeout(async () => {
+    showToast('Вакансия загружена', 'good');
     const btn = document.querySelector('.btn-add-vacancy');
     btn.disabled = false;
-    await focusAddedVacancy(recordId || progress.recordId || null, url, false, 'manual');
+
+    // Reload manual tab data and show the vacancy
+    invalidateCache();
+    const items = await api('/api/vacancies?status=manual').then(r => r.items || []);
+    const item = items.find(x => x.id === recordId) || items.find(x => x.url === url);
+    if (item) {
+      // Only update if we're still on the manual tab and the record matches
+      if (currentStatus === 'manual') {
+        setManualVacancy(item);
+        renderManualTabUI();
+        populateManualVacancySection(item);
+      }
+    }
   }, 400);
 
   return;
@@ -1052,54 +1092,129 @@ function clearSearch() {
   renderVacancyList();
 }
 
-/** UI для раздела "Вручную" */
+/** UI для раздела "Вручную" — всегда-visible форма с отображением текущей вакансии */
+let manualTabState = {
+  /** @type {string|null} current vacancy record id */
+  vacancyId: null,
+  /** @type {string|null} current vacancy URL */
+  url: null,
+  /** @type {string[]} letter variants */
+  variants: null,
+  /** @type {number} selected variant index */
+  selectedVariant: 0,
+  /** @type {boolean} whether parsing is in progress */
+  parsing: false,
+  /** @type {string|null} error message */
+  error: null,
+};
+
+function setManualVacancy(item) {
+  if (!item) {
+    manualTabState = { vacancyId: null, url: null, variants: null, selectedVariant: 0, parsing: false, error: null };
+    return;
+  }
+  manualTabState.vacancyId = item.id;
+  manualTabState.url = item.url;
+  manualTabState.selectedVariant = 0;
+  manualTabState.error = null;
+  // If vacancy already has letter variants, use them
+  if (item.coverLetter?.variants?.length) {
+    manualTabState.variants = item.coverLetter.variants;
+  } else if (item.coverLetter?.approvedText) {
+    manualTabState.variants = [item.coverLetter.approvedText];
+  } else {
+    manualTabState.variants = null;
+  }
+}
+
 function renderManualTabUI() {
-  const cached = cachedItems.manual;
+  const { vacancyId, url, variants, selectedVariant, parsing, error } = manualTabState;
+
+  const hasVacancy = !!vacancyId;
+  const hasVariants = !!(variants && variants.length);
 
   listEl.innerHTML = `
     <div class="manual-container">
       <div class="manual-input-section">
-        <label class="manual-label" for="manual-url">URL вакансии hh.ru</label>
+        <label class="manual-label" for="manual-url">Ссылка на вакансию hh.ru</label>
         <div class="manual-input-row">
           <input
             type="url"
             id="manual-url"
             class="manual-url-input"
             placeholder="https://hh.ru/vacancy/12345678"
-            value="${cached?.url || ''}"
+            value="${url || ''}"
+            ${parsing ? 'disabled' : ''}
           />
-          <button type="button" class="btn btn-generate" id="btn-generate-letter">
-            Сгенерировать
+          <button type="button" class="btn btn-load-vacancy" id="btn-load-vacancy" ${parsing ? 'disabled' : ''}>
+            ${parsing ? 'Загрузка…' : 'Загрузить'}
           </button>
         </div>
+        ${error ? `<p class="manual-error">${error}</p>` : ''}
       </div>
 
-      <div class="manual-variants-section" ${!cached?.variants ? 'style="display:none"' : ''}>
-        <div class="manual-variants-header">
-          <span class="manual-variants-title">Варианты письма</span>
+      <div class="manual-vacancy-section" id="manual-vacancy-section">
+        <!-- Vacancy title + company -->
+        <div class="manual-vacancy-header">
+          <h2 class="manual-vacancy-title">${hasVacancy ? '' : '<span class="manual-placeholder">Вставьте ссылку и нажмите «Загрузить»</span>'}</h2>
+          <p class="manual-vacancy-meta"></p>
+          <a class="manual-vacancy-link" target="_blank" rel="noopener" ${hasVacancy ? '' : 'hidden'}>Открыть на hh.ru</a>
+        </div>
+
+        <!-- Badges block -->
+        <div class="manual-badges" id="manual-badges"></div>
+
+        <!-- Full description -->
+        <div class="manual-description" id="manual-description">
+          <div class="manual-description-label">Описание вакансии</div>
+          <div class="manual-description-text"></div>
+        </div>
+
+        <!-- Variants tabs -->
+        <div class="manual-variants-section" id="manual-variants-section">
+          <div class="manual-variants-label">Варианты письма</div>
           <div class="manual-variant-tabs">
-            <button type="button" class="manual-variant-tab active" data-variant="0">Вариант 1</button>
-            <button type="button" class="manual-variant-tab" data-variant="1">Вариант 2</button>
-            <button type="button" class="manual-variant-tab" data-variant="2">Вариант 3</button>
+            ${hasVariants ? variants.map((_, i) => `
+              <button type="button" class="manual-variant-tab ${i === selectedVariant ? 'active' : ''}" data-variant="${i}">Вариант ${i + 1}</button>
+            `).join('') : `
+              <button type="button" class="manual-variant-tab active">Вариант 1</button>
+            `}
           </div>
         </div>
 
-        <div class="manual-letter-block">
-          <div class="manual-letter-text">${cached?.variants?.[0] || ''}</div>
-          <button type="button" class="btn-copy-letter" title="Копировать">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-            </svg>
-            Копировать
+        <!-- Letter text + Copy -->
+        <div class="manual-letter-section">
+          <div class="manual-letter-header">
+            <span class="manual-letter-title">Текст отклика</span>
+          </div>
+          <div class="manual-letter-body">
+            <div class="manual-letter-text" id="manual-letter-text">${hasVariants ? (variants[selectedVariant] || '') : '<span class="manual-placeholder">Загрузите вакансию для генерации письма</span>'}</div>
+            <button type="button" class="btn btn-copy-letter" id="btn-copy-letter" ${hasVariants ? '' : 'disabled'}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              Копировать
+            </button>
+          </div>
+        </div>
+
+        <!-- Generate button -->
+        <div class="manual-generate-section">
+          <button type="button" class="btn btn-generate-letter" id="btn-generate-letter" ${hasVacancy ? '' : 'disabled'}>
+            ${hasVacancy ? 'Сгенерировать' : 'Сначала загрузите вакансию'}
           </button>
         </div>
-      </div>
 
-      <div class="manual-finish-section" ${!cached?.variants ? 'style="display:none"' : ''}>
-        <button type="button" class="btn btn-finish" id="btn-finish-manual">
-          Завершить → Отправить в «Подходят»
-        </button>
+        <!-- Finish button -->
+        <div class="manual-finish-section">
+          <button type="button" class="btn btn-finish" id="btn-finish-manual" ${hasVacancy ? '' : 'disabled'}>
+            Завершить
+          </button>
+          <button type="button" class="btn btn-clear" id="btn-clear-manual">
+            Очистить
+          </button>
+        </div>
       </div>
     </div>
   `;
@@ -1107,89 +1222,317 @@ function renderManualTabUI() {
   initManualTabHandlers();
 }
 
-let manualTabState = { url: '', variants: null, selectedVariant: 0 };
+/** Populate manual vacancy section with vacancy data (called after data loads) */
+function populateManualVacancySection(item) {
+  setManualVacancy(item);
+
+  const section = document.getElementById('manual-vacancy-section');
+  if (!section) {
+    // Re-render to show vacancy section
+    renderManualTabUI();
+    populateManualVacancySection(item);
+    return;
+  }
+
+  // Title
+  const titleEl = section.querySelector('.manual-vacancy-title');
+  if (titleEl) titleEl.textContent = item.title || 'Без названия';
+
+  // Meta (company + salary)
+  const metaEl = section.querySelector('.manual-vacancy-meta');
+  if (metaEl) {
+    const parts = [item.company, item.salaryRaw].filter(Boolean);
+    metaEl.textContent = parts.join(' · ');
+  }
+
+  // Link
+  const linkEl = section.querySelector('.manual-vacancy-link');
+  if (linkEl) linkEl.href = item.url || '#';
+
+  // Badges
+  const badgesEl = section.querySelector('#manual-badges');
+  if (badgesEl) {
+    badgesEl.innerHTML = '';
+    // Employment format
+    if (item.employment) {
+      const badge = document.createElement('span');
+      badge.className = 'badge badge--employment';
+      badge.textContent = item.employment;
+      badgesEl.appendChild(badge);
+    }
+    // Workplace type
+    const types = Array.isArray(item.workplaceType) ? item.workplaceType : [item.workplaceType || 'не указано'];
+    for (const wt of types) {
+      const badge = document.createElement('span');
+      badge.className = 'badge badge--workplace';
+      badge.setAttribute('data-workplace-type', wt);
+      badge.textContent = wt;
+      badgesEl.appendChild(badge);
+    }
+    // English level
+    const langLevel = item.englishLevel || (item.languages?.[0]?.level);
+    if (langLevel) {
+      const badge = document.createElement('span');
+      badge.className = 'badge badge--lang';
+      badge.setAttribute('data-level', langLevel);
+      badge.textContent = `Английский: ${langLevel}`;
+      badgesEl.appendChild(badge);
+    }
+    // Overall score / trigger badge
+    const score = item.scoreOverall ?? item.geminiScore;
+    if (score != null && score !== '') {
+      const badge = document.createElement('span');
+      badge.className = 'badge badge--score';
+      badge.textContent = `Скор: ${score}`;
+      badgesEl.appendChild(badge);
+    }
+  }
+
+  // Description
+  const descTextEl = section.querySelector('.manual-description-text');
+  if (descTextEl) {
+    const desc = item.descriptionForLlm || item.descriptionPreview || '';
+    descTextEl.textContent = desc || 'Описание не загружено.';
+  }
+
+  // Re-render the variants + finish section if we have variants
+  const hasVariants = !!(manualTabState.variants && manualTabState.variants.length);
+  const letterSection = section.querySelector('.manual-letter-section');
+  const generateSection = section.querySelector('.manual-generate-section');
+  const finishSection = section.querySelector('.manual-finish-section');
+
+  if (hasVariants && !letterSection) {
+    // Need to insert variants section before finish
+    if (generateSection) generateSection.remove();
+    const newSection = buildManualLetterSection();
+    finishSection.before(newSection);
+  }
+}
+
+function buildManualLetterSection() {
+  const { variants, selectedVariant } = manualTabState;
+  const div = document.createElement('div');
+  div.className = 'manual-letter-section';
+  div.innerHTML = `
+    <div class="manual-letter-header">
+      <span class="manual-letter-title">Сопроводительное письмо</span>
+      <div class="manual-variant-tabs">
+        ${variants.map((_, i) => `
+          <button type="button" class="manual-variant-tab ${i === selectedVariant ? 'active' : ''}" data-variant="${i}">Вариант ${i + 1}</button>
+        `).join('')}
+      </div>
+    </div>
+    <div class="manual-letter-body">
+      <div class="manual-letter-text">${variants[selectedVariant] || ''}</div>
+      <button type="button" class="btn btn-copy-letter" id="btn-copy-letter">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        Копировать
+      </button>
+    </div>
+  `;
+  return div;
+}
 
 function initManualTabHandlers() {
-  const generateBtn = document.getElementById('btn-generate-letter');
   const urlInput = document.getElementById('manual-url');
+  const loadBtn = document.getElementById('btn-load-vacancy');
+  const generateBtn = document.getElementById('btn-generate-letter');
   const finishBtn = document.getElementById('btn-finish-manual');
-  const copyBtn = document.querySelector('.btn-copy-letter');
+  const clearBtn = document.getElementById('btn-clear-manual');
+  const copyBtn = document.getElementById('btn-copy-letter');
   const variantTabs = document.querySelectorAll('.manual-variant-tab');
 
-  generateBtn?.addEventListener('click', async () => {
+  // Load vacancy from URL
+  loadBtn?.addEventListener('click', async () => {
     const url = urlInput?.value?.trim();
     if (!url) {
       showToast('Вставьте URL вакансии', 'bad');
       return;
     }
-    generateBtn.disabled = true;
-    generateBtn.textContent = 'Генерация...';
+    if (!/^https?:\/\/([^.]+\.)?hh\.ru\/vacancy\/\d+(?:[/?#].*)?$/i.test(url)) {
+      showToast('Это не похоже на ссылку hh.ru вакансии', 'bad');
+      return;
+    }
+
+    loadBtn.disabled = true;
+    loadBtn.textContent = 'Загрузка…';
+    manualTabState.parsing = true;
+    manualTabState.error = null;
+    manualTabState.url = url;
 
     try {
-      const response = await fetch('/api/generate-letter', {
+      const res = await api('/api/vacancy/add-from-clipboard', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
+        body: JSON.stringify({ url }),
       });
-      const data = await response.json();
+      showToast('Вакансия загружается…', 'good');
 
-      cachedItems.manual = { url, variants: data.variants };
-      manualTabState = { url, variants: data.variants, selectedVariant: 0 };
+      // Poll until done, then show
+      await pollManualVacancy(res.id, url);
+    } catch (e) {
+      manualTabState.error = e.message;
+      manualTabState.parsing = false;
+      loadBtn.disabled = false;
+      loadBtn.textContent = 'Загрузить';
+      showToast('Ошибка: ' + e.message, 'bad');
+      renderManualTabUI();
+    }
+  });
 
-      document.querySelector('.manual-variants-section').style.display = '';
-      document.querySelector('.manual-finish-section').style.display = '';
-
-      const letterText = document.querySelector('.manual-letter-text');
-      if (letterText) letterText.textContent = data.variants[0];
-
+  // Generate letter button
+  generateBtn?.addEventListener('click', async () => {
+    if (!manualTabState.vacancyId) {
+      showToast('Сначала загрузите вакансию', 'bad');
+      return;
+    }
+    generateBtn.disabled = true;
+    generateBtn.textContent = 'Генерация…';
+    try {
+      const res = await requestCoverLetterGenerate(manualTabState.vacancyId, false);
+      // Reload the vacancy to get updated variants
+      const item = await api(`/api/vacancies?status=manual`).then(r => {
+        const items = r.items || [];
+        return items.find(x => x.id === manualTabState.vacancyId);
+      });
+      if (item?.coverLetter?.variants?.length) {
+        manualTabState.variants = item.coverLetter.variants;
+        manualTabState.selectedVariant = 0;
+      }
       showToast('Письмо сгенерировано', 'good');
+      renderManualTabUI();
+      populateManualVacancySection(item || { id: manualTabState.vacancyId, url: manualTabState.url, coverLetter: {} });
     } catch (e) {
       showToast('Ошибка генерации: ' + e.message, 'bad');
     } finally {
       generateBtn.disabled = false;
-      generateBtn.textContent = 'Сгенерировать';
+      generateBtn.textContent = 'Сгенерировать сопроводительное';
     }
   });
 
+  // Variant tabs
   variantTabs.forEach((tab) => {
     tab.addEventListener('click', () => {
-      variantTabs.forEach((t) => t.classList.remove('active'));
-      tab.classList.add('active');
       const idx = parseInt(tab.dataset.variant);
+      if (!Number.isFinite(idx) || idx < 0) return;
       manualTabState.selectedVariant = idx;
+      document.querySelectorAll('.manual-variant-tab').forEach((t) => t.classList.remove('active'));
+      tab.classList.add('active');
       const letterText = document.querySelector('.manual-letter-text');
       if (letterText && manualTabState.variants) {
-        letterText.textContent = manualTabState.variants[idx];
+        letterText.textContent = manualTabState.variants[idx] || '';
       }
     });
   });
 
+  // Copy letter
   copyBtn?.addEventListener('click', async () => {
-    const text = document.querySelector('.manual-letter-text')?.textContent;
+    const text = manualTabState.variants?.[manualTabState.selectedVariant] || '';
     if (!text) return;
-    await navigator.clipboard.writeText(text);
-    showToast('Скопировано!', 'good');
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('Скопировано!', 'good');
+    } catch {
+      showToast('Не удалось скопировать', 'bad');
+    }
   });
 
+  // Finish → approve vacancy
   finishBtn?.addEventListener('click', async () => {
-    if (!manualTabState.variants) return;
-    const { url, variants, selectedVariant } = manualTabState;
-
+    if (!manualTabState.vacancyId) {
+      showToast('Нет загруженной вакансии', 'bad');
+      return;
+    }
+    finishBtn.disabled = true;
     try {
-      const response = await fetch('/api/approve-manual', {
+      const approvedText = manualTabState.variants?.[manualTabState.selectedVariant] || '';
+      await api('/api/vacancy/complete-manual', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, letter: variants[selectedVariant] })
+        body: JSON.stringify({
+          id: manualTabState.vacancyId,
+          approvedText,
+        }),
       });
-
-      cachedItems.manual = null;
-      cachedItems.approved = null;
-
       showToast('Отправлено в «Подходят»', 'good');
-      load().then(renderVacancyList);
+      manualTabState = { vacancyId: null, url: null, variants: null, selectedVariant: 0, parsing: false, error: null };
+      invalidateCache();
+      // Switch to approved tab
+      vacancyTabsEl.querySelectorAll('.tab').forEach((b) => b.classList.remove('active'));
+      const approvedTab = vacancyTabsEl.querySelector('[data-status="approved"]');
+      if (approvedTab) approvedTab.classList.add('active');
+      currentStatus = 'approved';
+      listEl.innerHTML = '';
+      await load(true);
     } catch (e) {
       showToast('Ошибка: ' + e.message, 'bad');
+      finishBtn.disabled = false;
     }
+  });
+
+  // Clear → delete vacancy from manual tab
+  clearBtn?.addEventListener('click', async () => {
+    if (!manualTabState.vacancyId) {
+      showToast('Нет загруженной вакансии', 'bad');
+      return;
+    }
+    if (!confirm('Удалить вакансию с вкладки «Вручную»?')) return;
+    clearBtn.disabled = true;
+    try {
+      await api('/api/dismiss', {
+        method: 'POST',
+        body: JSON.stringify({ id: manualTabState.vacancyId }),
+      });
+      showToast('Удалено', 'good');
+      manualTabState = { vacancyId: null, url: null, variants: null, selectedVariant: 0, parsing: false, error: null };
+      invalidateCache();
+      renderManualTabUI();
+    } catch (e) {
+      showToast('Ошибка: ' + e.message, 'bad');
+    } finally {
+      clearBtn.disabled = false;
+    }
+  });
+}
+
+async function pollManualVacancy(recordId, url) {
+  return new Promise((resolve, reject) => {
+    const interval = setInterval(async () => {
+      try {
+        const progress = await api('/api/vacancy/add-progress');
+        if (progress.step === 'saving' && progress.percent === 100) {
+          clearInterval(interval);
+          manualTabState.parsing = false;
+          // Load the vacancy record
+          const items = await api('/api/vacancies?status=manual').then(r => r.items || []);
+          const item = items.find(x => x.id === recordId) || items.find(x => x.url === url);
+          if (item) {
+            setManualVacancy(item);
+            manualTabState.url = url;
+            renderManualTabUI();
+            populateManualVacancySection(item);
+          } else {
+            manualTabState.error = 'Вакансия не найдена после загрузки';
+            renderManualTabUI();
+          }
+          resolve();
+          return;
+        }
+        if (progress.error) {
+          clearInterval(interval);
+          manualTabState.parsing = false;
+          manualTabState.error = progress.error;
+          renderManualTabUI();
+          reject(new Error(progress.error));
+          return;
+        }
+      } catch (e) {
+        clearInterval(interval);
+        manualTabState.parsing = false;
+        reject(e);
+      }
+    }, 500);
   });
 }
 
@@ -1366,8 +1709,17 @@ async function load(forceRefresh = false) {
           vacancyCounts[status] = cachedItems[status].length;
         }
       }
-renderVacancyList();
-return;
+      // Manual tab uses dedicated UI instead of card list
+      if (currentStatus === 'manual') {
+        // Find the first manual vacancy (most recent) to show in the manual form
+        const first = (items && items.length > 0) ? items[items.length - 1] : null;
+        setManualVacancy(first);
+        renderManualTabUI();
+        if (first) populateManualVacancySection(first);
+      } else {
+        renderVacancyList();
+      }
+      return;
     }
 
     // Загружаем все записи параллельно для подсчёта + отображения
@@ -1384,9 +1736,17 @@ return;
     }
 
     // Отображаем текущую вкладку
-const currentData = allData.find((d) => d.status === currentStatus);
-const { items } = currentData;
-renderVacancyList();
+    const currentData = allData.find((d) => d.status === currentStatus);
+    const { items } = currentData;
+    // Manual tab uses dedicated UI instead of card list
+    if (currentStatus === 'manual') {
+      const first = (items && items.length > 0) ? items[items.length - 1] : null;
+      setManualVacancy(first);
+      renderManualTabUI();
+      if (first) populateManualVacancySection(first);
+    } else {
+      renderVacancyList();
+    }
   } catch (e) {
     listEl.innerHTML = `<p class="err">${e.message}</p>`;
   }
@@ -1399,7 +1759,15 @@ vacancyTabsEl.querySelectorAll('.tab-underlined-item').forEach((btn) => {
     currentStatus = btn.dataset.status;
     // Если данные уже в кэше — отображаем сразу, иначе загружаем
     if (cachedItems[currentStatus] !== null) {
-      renderVacancyList();
+      if (currentStatus === 'manual') {
+        const items = cachedItems[currentStatus] || [];
+        const first = items.length > 0 ? items[items.length - 1] : null;
+        setManualVacancy(first);
+        renderManualTabUI();
+        if (first) populateManualVacancySection(first);
+      } else {
+        renderVacancyList();
+      }
     } else {
       load();
     }

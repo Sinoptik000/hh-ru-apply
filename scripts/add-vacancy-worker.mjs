@@ -95,18 +95,94 @@ async function safeParseVacancyPage(page) {
       const title = t('[data-qa="vacancy-title"]') || t('h1');
       const company = t('[data-qa="vacancy-company-name"]') || t('a[data-qa="vacancy-company-name"]');
       const salary = t('[data-qa="vacancy-salary"]');
-      const experience = t('[data-qa="vacancy-experience"]');
-      const employment = t('[data-qa="work-formats-text"]') || t('[data-qa="vacancy-employment-mode"]') || t('[data-qa="vacancy-view-employment-mode"]');
-      const address = t('[data-qa="vacancy-view-location"]') || t('[data-qa="vacancy-view-raw-address"]');
 
-let description =
- t('[data-qa="vacancy-description"]') ||
- t('[data-qa="vacancy-view-vacancyDescription"]') ||
- t('.vacancy-description') ||
- t('.vacancy-section') ||
- t('[itemprop="description"]') ||
- t('.bloko-text') ||
- document.querySelector('[class*="vacancy-description"]')?.textContent?.replace(/\s+/g, ' ')?.trim() || '';
+      // Опыт
+      const experience = t('[data-qa="vacancy-experience"]') ||
+        (() => {
+          const el = Array.from(document.querySelectorAll('p, span, div')).find(e =>
+            /опыт\s*работы\s*:?\s*\S/i.test(e.textContent)
+          );
+          return el ? el.textContent.replace(/.*опыт\s*работы\s*:\s*/i, '').trim() : '';
+        })();
+
+      // Занятость / формат
+      const employment = t('[data-qa="work-formats-text"]') ||
+        t('[data-qa="vacancy-employment-mode"]') ||
+        t('[data-qa="vacancy-view-employment-mode"]');
+
+      // Адрес
+      const address = t('[data-qa="vacancy-view-location"]') ||
+        t('[data-qa="vacancy-view-raw-address"]');
+
+      // Выплаты — ищем "Выплаты: раз в месяц"
+      const paymentSchedule = (() => {
+        const el = Array.from(document.querySelectorAll('p, span')).find(e =>
+          /выплаты\s*:?\s*/i.test(e.textContent)
+        );
+        return el ? el.textContent.replace(/.*выплаты\s*:\s*/i, '').trim() : '';
+      })();
+
+      // График — ищем "График: 5/2"
+      const schedule = (() => {
+        const el = Array.from(document.querySelectorAll('p, span')).find(e =>
+          /график\s*:?\s*/i.test(e.textContent)
+        );
+        return el ? el.textContent.replace(/.*график\s*:\s*/i, '').trim() : '';
+      })();
+
+      // Рабочие часы — ищем "Рабочие часы: 8"
+      const workHours = (() => {
+        const el = Array.from(document.querySelectorAll('p, span')).find(e =>
+          /рабочие\s*часы\s*:?\s*\d/i.test(e.textContent)
+        );
+        return el ? el.textContent.replace(/.*рабочие\s*часы\s*:\s*/i, '').trim() : '';
+      })();
+
+      // Сколько человек смотрит вакансию
+      const viewerCount = (() => {
+        const el = Array.from(document.querySelectorAll('p, span, div')).find(e =>
+          /смотрет/i.test(e.textContent) && /ваканс/i.test(e.textContent)
+        );
+        if (!el) return null;
+        const childMatch = el.innerHTML.match(/(\d+)\s*(?:человек|чел\.?)/i);
+        if (childMatch) return childMatch[1];
+        const match = el.textContent.match(/(\d+)\s*(?:человек|чел\.?)/i);
+        return match ? match[1] : null;
+      })();
+
+      // Оформление — sibling сразу после "Оформление:"
+      const employmentType = (() => {
+        const allEls = Array.from(document.querySelectorAll('*'));
+        const labelEl = allEls.find(e => /^оформление\s*:\s*/i.test(e.textContent));
+        if (!labelEl) return '';
+        let sibling = labelEl.nextElementSibling;
+        if (sibling) return sibling.textContent.replace(/\s+/g, ' ').trim();
+        const parent = labelEl.parentElement;
+        if (parent) {
+          const siblings = Array.from(parent.childNodes).filter(n => n.nodeType === 1);
+          const idx = siblings.indexOf(labelEl);
+          if (idx >= 0 && idx < siblings.length - 1) {
+            return siblings[idx + 1].textContent.replace(/\s+/g, ' ').trim();
+          }
+        }
+        return '';
+      })();
+
+      // Описание вакансии: пробуем разные селекторы
+      let description =
+        t('[data-qa="vacancy-description"]') ||
+        t('[data-qa="vacancy-view-vacancyDescription"]') ||
+        t('.vacancy-description') ||
+        t('.vacancy-section') ||
+        t('[itemprop="description"]') ||
+        t('.bloko-text') ||
+        document.querySelector('[class*="vacancy-description"]')?.textContent?.replace(/\s+/g, ' ')?.trim() ||
+        (() => {
+          const article = document.querySelector('article') || document.querySelector('section[role="main"]') || document.querySelector('main');
+          if (!article) return '';
+          return article.textContent.replace(/\s+/g, ' ').trim().slice(0, 15000);
+        })() ||
+        '';
 
       let languages = [];
       const langMatch = document.body.textContent.match(/(Английский|English)\s*—\s*(\S+(?:\s*—\s*\S+)?)/i);
@@ -130,6 +206,11 @@ let description =
         experience,
         employment,
         address,
+        paymentSchedule,
+        employmentType,
+        schedule,
+        workHours,
+        viewerCount,
         description,
         languages,
         textBlob: blob,
@@ -259,6 +340,12 @@ updateProgress({ step: 'parsing', percent: 25, message: 'Навигация…' 
       workplaceType: filter.workplaceType || ['не указано'],
       languages: parsed.languages || [],
       englishLevel: (parsed.languages || []).find(l => /английск|english/i.test(l.name || ''))?.level || null,
+      // Новые поля
+      paymentSchedule: parsed.paymentSchedule || null,
+      employmentType: parsed.employmentType || null,
+      schedule: parsed.schedule || null,
+      workHours: parsed.workHours || null,
+      viewerCount: parsed.viewerCount || null,
       descriptionPreview: parsed.description.slice(0, 600),
       descriptionForLlm: '',
       llmProvider: 'manual',

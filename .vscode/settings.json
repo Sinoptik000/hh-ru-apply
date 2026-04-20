@@ -1,3 +1,10 @@
 {
-    "markdown.validate.enabled": true
+    "markdown.validate.enabled": true,
+    "chat.tools.terminal.autoApprove": {
+        "Get-Item": true,
+        "/^node scripts/add-vacancy-worker\\.mjs --url=\"https://hh\\.ru/vacancy/132290129\\?from=applicant_recommended&hhtmFrom=main\" 2>&1$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
 }
