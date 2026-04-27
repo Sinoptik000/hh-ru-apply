@@ -674,6 +674,10 @@ function startAddVacancyPolling(url, recordId) {
         renderManualTabUI();
         populateManualVacancySection(item);
       }
+      await runManualCoverLetterGeneration(item.id, {
+        fallbackUrl: url,
+        successMessage: 'Письмо сгенерировано автоматически',
+      });
     }
   }, 400);
 
@@ -1200,22 +1204,27 @@ function renderManualTabUI() {
 
         <!-- Блок 4: Выбор варианта письма (радио-кнопки как в модалке) -->
         <div class="manual-variants-section" id="manual-variants-section">
-          <fieldset class="modal-draft-fieldset" id="manual-variant-fieldset" ${hasVariants ? '' : 'disabled'}>
-            <legend>Вариант</legend>
-            ${displayVariants.map((_, i) => `
-              <div class="modal-draft-variant-row">
-                <input
-                  type="radio"
-                  name="manual-variant"
-                  id="manual-variant-${i}"
-                  value="${i}"
-                  ${i === selectedVariant ? 'checked' : ''}
-                  ${hasVariants ? '' : 'disabled'}
-                />
-                <label for="manual-variant-${i}">Вариант ${i + 1}</label>
-              </div>
-            `).join('')}
-          </fieldset>
+          <div class="manual-variants-row">
+            <fieldset class="modal-draft-fieldset" id="manual-variant-fieldset" ${hasVariants ? '' : 'disabled'}>
+              <legend>Вариант</legend>
+              ${displayVariants.map((_, i) => `
+                <div class="modal-draft-variant-row">
+                  <input
+                    type="radio"
+                    name="manual-variant"
+                    id="manual-variant-${i}"
+                    value="${i}"
+                    ${i === selectedVariant ? 'checked' : ''}
+                    ${hasVariants ? '' : 'disabled'}
+                  />
+                  <label for="manual-variant-${i}">Вариант ${i + 1}</label>
+                </div>
+              `).join('')}
+            </fieldset>
+            <button type="button" class="btn btn-generate-letter" id="btn-generate-letter" ${hasVacancy ? '' : 'disabled'}>
+              ${hasVacancy ? 'Сгенерировать письмо' : 'Сначала загрузите вакансию'}
+            </button>
+          </div>
         </div>
 
         <!-- Блок 5: Редактирование письма (textarea как в модалке) -->
@@ -1255,9 +1264,6 @@ function renderManualTabUI() {
 
         <!-- Блок 6: Финальные действия -->
         <div class="manual-finish-section">
-          <button type="button" class="btn btn-generate-letter" id="btn-generate-letter" ${hasVacancy ? '' : 'disabled'}>
-            ${hasVacancy ? 'Сгенерировать письмо' : 'Сначала загрузите вакансию'}
-          </button>
           <button type="button" class="btn btn-clear" id="btn-clear-manual">
             Очистить
           </button>
@@ -1531,6 +1537,50 @@ function syncManualTextareaToVariant() {
   manualTabState.variants[manualTabState.selectedVariant] = ta.value;
 }
 
+async function refreshManualVacancyById(vacancyId, fallbackUrl = null) {
+  const response = await api('/api/vacancies?status=manual');
+  const items = response.items || [];
+  const item = items.find((x) => x.id === vacancyId) || (fallbackUrl ? items.find((x) => x.url === fallbackUrl) : null);
+  if (!item) return null;
+  setManualVacancy(item);
+  manualTabState.url = item.url || fallbackUrl || manualTabState.url || null;
+  renderManualTabUI();
+  populateManualVacancySection(item);
+  return item;
+}
+
+async function runManualCoverLetterGeneration(vacancyId, options = {}) {
+  const { fallbackUrl = null, successMessage = 'Письмо сгенерировано' } = options;
+  if (!vacancyId) {
+    showToast('Сначала загрузите вакансию', 'bad');
+    return null;
+  }
+
+  const generateBtn = document.getElementById('btn-generate-letter');
+  if (generateBtn) {
+    generateBtn.disabled = true;
+    generateBtn.textContent = 'Генерация…';
+  }
+
+  try {
+    await requestCoverLetterGenerate(vacancyId, false);
+    const item = await refreshManualVacancyById(vacancyId, fallbackUrl);
+    showToast(successMessage, 'good');
+    return item;
+  } catch (e) {
+    showToast('Ошибка генерации: ' + e.message, 'bad');
+    return null;
+  } finally {
+    const freshGenerateBtn = document.getElementById('btn-generate-letter');
+    if (freshGenerateBtn) {
+      freshGenerateBtn.disabled = !manualTabState.vacancyId;
+      freshGenerateBtn.textContent = manualTabState.vacancyId
+        ? 'Сгенерировать письмо'
+        : 'Сначала загрузите вакансию';
+    }
+  }
+}
+
 function initManualTabHandlers() {
   const urlInput = document.getElementById('manual-url');
   const loadBtn = document.getElementById('btn-load-vacancy');
@@ -1761,34 +1811,12 @@ function initManualTabHandlers() {
     modelPanel.addEventListener('click', (e) => e.stopPropagation());
   }
 
-  // Generate letter button
+  // Generate letter button (manual mode)
   generateBtn?.addEventListener('click', async () => {
-    if (!manualTabState.vacancyId) {
-      showToast('Сначала загрузите вакансию', 'bad');
-      return;
-    }
-    generateBtn.disabled = true;
-    generateBtn.textContent = 'Генерация…';
-    try {
-      const res = await requestCoverLetterGenerate(manualTabState.vacancyId, false);
-      // Reload the vacancy to get updated variants
-      const item = await api(`/api/vacancies?status=manual`).then(r => {
-        const items = r.items || [];
-        return items.find(x => x.id === manualTabState.vacancyId);
-      });
-      if (item?.coverLetter?.variants?.length) {
-        manualTabState.variants = item.coverLetter.variants;
-        manualTabState.selectedVariant = 0;
-      }
-      showToast('Письмо сгенерировано', 'good');
-      renderManualTabUI();
-      populateManualVacancySection(item || { id: manualTabState.vacancyId, url: manualTabState.url, coverLetter: {} });
-    } catch (e) {
-      showToast('Ошибка генерации: ' + e.message, 'bad');
-    } finally {
-      generateBtn.disabled = false;
-      generateBtn.textContent = 'Сгенерировать письмо';
-    }
+    await runManualCoverLetterGeneration(manualTabState.vacancyId, {
+      fallbackUrl: manualTabState.url,
+      successMessage: 'Письмо сгенерировано',
+    });
   });
 
   // ===== Блок 6: Очистить =====
@@ -1842,6 +1870,10 @@ async function pollManualVacancy(recordId, url) {
             manualTabState.url = url;
             renderManualTabUI();
             populateManualVacancySection(item);
+            await runManualCoverLetterGeneration(item.id, {
+              fallbackUrl: url,
+              successMessage: 'Письмо сгенерировано автоматически',
+            });
           } else {
             manualTabState.error = 'Вакансия не найдена после загрузки';
             renderManualTabUI();

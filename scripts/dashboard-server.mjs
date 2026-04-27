@@ -682,13 +682,16 @@ if (req.method === 'POST' && pathname === '/api/vacancy/add-from-clipboard') {
 
   // Spawn background child process
   const logFd = fs.openSync(path.join(DATA_DIR, 'add-vacancy-worker.log'), 'a');
-  spawn(process.execPath, [workerScript, `--url=${normalizedUrl}`, `--record-id=${recordId}`], {
+  const worker = spawn(process.execPath, [workerScript, `--url=${normalizedUrl}`, `--record-id=${recordId}`], {
     cwd: ROOT,
-    detached: true,
+    // На Windows detached может открывать отдельное окно терминала.
+    // Оставляем процесс фоновым через unref() без создания новой консоли.
+    detached: false,
     windowsHide: true,
     stdio: ['ignore', logFd, logFd],
     env: process.env,
   });
+  worker.unref();
   fs.closeSync(logFd);
 
   return sendJson(res, 200, { ok: true, id: recordId, status: 'manual' });
