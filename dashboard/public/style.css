@@ -405,9 +405,19 @@ h1 {
 
 .card-head {
   display: flex;
+  justify-content: space-between;
   align-items: flex-start;
-  gap: 0.75rem;
+  gap: 1rem;
   margin-bottom: 0.5rem;
+}
+
+.title-link {
+  flex: 1;
+  font-weight: 700;
+  font-size: 1.15rem;
+  line-height: 1.35;
+  color: var(--text);
+  text-decoration: none;
 }
 
 .score-block {
@@ -1341,75 +1351,93 @@ color: var(--text);
 background: #2a3139;
 }
 
-/* Circular progress button */
+/* ─── Progress Ring Button (btn-refresh-section) ─── */
 .btn-refresh-section {
-position: relative;
-display: flex;
-align-items: center;
-justify-content: center;
-width: 44px;
-height: 44px;
-padding: 0;
-border: none;
-border-radius: 50%;
-background: var(--panel);
-color: var(--accent);
-cursor: pointer;
-font-family: inherit;
-transition: opacity 0.2s ease;
-}
-
-.btn-refresh-section::before {
-content: '';
-position: absolute;
-inset: 2px;
-border-radius: 50%;
-background: var(--panel);
-z-index: 0;
-}
-
-.btn-refresh-section::after {
-content: '';
-position: absolute;
-inset: 0;
-border-radius: 50%;
-background: conic-gradient(
-var(--accent) var(--progress, 0%),
-transparent var(--progress, 0%)
-);
--webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #fff calc(100% - 3px));
-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #fff calc(100% - 3px));
-transition: background 0.3s ease;
+  position: relative;
+  width: 72px;
+  height: 72px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--accent);
+  cursor: pointer;
+  font-family: inherit;
+  transition: box-shadow 0.3s ease;
 }
 
 .btn-refresh-section:hover {
-color: #a8d4ff;
+  box-shadow: 0 0 24px rgba(233, 69, 96, 0.4);
 }
 
 .btn-refresh-section:disabled {
-opacity: 0.6;
-cursor: not-allowed;
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Progress ring — conic gradient overlay */
+.btn-refresh-section .ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--accent) var(--progress, 0%),
+    transparent var(--progress, 0%)
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #fff calc(100% - 4px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #fff calc(100% - 4px));
+  transition: background 0.25s ease;
+  pointer-events: none;
+}
+
+/* Spinning indicator ring (shown during activity) */
+.btn-refresh-section::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: var(--accent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.btn-refresh-section.loading::before {
+  opacity: 1;
+  animation: ring-spin 1.2s linear infinite;
+}
+
+.btn-refresh-section .refresh-icon {
+  position: relative;
+  z-index: 1;
+  font-size: 28px;
+  line-height: 1;
+  transition: transform 0.3s ease;
 }
 
 .btn-refresh-section.loading .refresh-icon {
-animation: spin 1s linear infinite;
+  animation: icon-pulse 0.8s ease-in-out infinite;
 }
 
-.btn-refresh-section .refresh-icon,
-.btn-refresh-section .refresh-count {
-position: relative;
-z-index: 1;
-font-size: 1.1rem;
-line-height: 1;
+@keyframes ring-spin {
+  to { transform: rotate(360deg); }
 }
 
-.btn-refresh-section .refresh-count {
-display: none;
+@keyframes icon-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
 }
 
-@keyframes spin {
-from { transform: rotate(0deg); }
-to { transform: rotate(360deg); }
+/* Label under the button */
+.refresh-section-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.refresh-section-label span {
+  color: var(--accent);
+  font-weight: 600;
 }
 /* ─── Manual Tab (Вкладка "Вручную") ─── */
 .manual-container {
@@ -1799,4 +1827,239 @@ to { transform: rotate(360deg); }
 /* Manual card list override (no cards shown in manual tab) */
 body.tab-manual .card {
   /* intentionally hidden — manual tab uses dedicated UI */
+}
+
+/* ─── Блок 1: Заголовок + Скор (скор в правом верхнем углу) ─── */
+.manual-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.manual-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.manual-page-title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.manual-vacancy-title {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.manual-score-block {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.manual-score-block .score-block {
+  align-items: flex-end;
+}
+
+/* ─── Блок 2: Мета-информация ─── */
+.manual-meta-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.manual-meta-block .manual-vacancy-link.title-link {
+  font-size: 0.88rem;
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.manual-meta-block .manual-vacancy-link:hover {
+  text-decoration: underline;
+}
+
+.manual-meta-block .manual-vacancy-meta {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.manual-meta-block .manual-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.manual-meta-block .manual-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.manual-meta-block .tag {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+}
+
+/* ─── Блок 3: Описание вакансии ─── */
+.manual-trigger-phrase {
+  padding: 0.5rem 0.75rem;
+  background: rgba(124, 183, 255, 0.1);
+  border: 1px solid rgba(124, 183, 255, 0.3);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+.manual-trigger-phrase strong {
+  font-weight: 600;
+}
+
+.manual-description-text ul,
+.manual-description-text ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.manual-description-text li {
+  margin-bottom: 0.3rem;
+}
+
+/* ─── Блок 4: Выбор варианта письма (радио-кнопки) ─── */
+.manual-variants-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.manual-variants-section fieldset {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem 0.65rem;
+}
+
+.manual-variants-section fieldset[disabled] {
+  opacity: 0.5;
+}
+
+.manual-variants-section legend {
+  font-size: 0.82rem;
+  color: var(--muted);
+  padding: 0 0.25rem;
+}
+
+/* ─── Блок 5: Редактирование письма ─── */
+.manual-letter-edit-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.manual-letter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Блок причины отклонения */
+.manual-decline-reason {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.manual-decline-label {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.manual-decline-textarea {
+  width: 100%;
+  min-height: 4rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.88rem;
+  line-height: 1.45;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.manual-decline-textarea::placeholder {
+  color: var(--muted);
+}
+
+.manual-decline-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* ─── Блок 6: Финальные действия ─── */
+.manual-finish-section {
+  display: flex;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+/* Override manual-vacancy-header styles (убираем旧的) */
+.manual-vacancy-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.manual-vacancy-header .manual-vacancy-title {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+/* Override manual-description-text styles */
+.manual-description-text {
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.65;
+  white-space: pre-wrap;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.manual-description-text p {
+  margin: 0 0 0.75rem;
+}
+
+.manual-description-text p:last-child {
+  margin-bottom: 0;
 }

@@ -25,6 +25,7 @@ import { loadPreferences } from '../lib/preferences.mjs';
 import { appendFeedback } from '../lib/feedback-context.mjs';
 import { loadCvBundle } from '../lib/cv-load.mjs';
 import { getOpenRouterApiKey, scoreVacancyWithOpenRouter } from '../lib/openrouter-score.mjs';
+import { getEnabledProviders } from '../lib/ai-cascade.mjs';
 import {
   generateCoverLetterVariants,
   normalizeVariants,
@@ -294,7 +295,7 @@ const server = http.createServer(async (req, res) => {
     let scoreUpdated = false;
     let scoreError = null;
 
-    if (getOpenRouterApiKey()) {
+    if (getEnabledProviders().length || getOpenRouterApiKey()) {
       try {
         const cvBundle = await loadCvBundle();
         if (!cvBundle.text.trim()) {
@@ -313,7 +314,7 @@ const server = http.createServer(async (req, res) => {
             prefs
           );
           Object.assign(patch, {
-            llmProvider: 'openrouter',
+            llmProvider: 'cascade',
             openRouterModel: llm.providerModel || null,
             scoreVacancy: llm.scoreVacancy,
             scoreCvMatch: llm.scoreCvMatch,
@@ -330,7 +331,7 @@ const server = http.createServer(async (req, res) => {
         scoreError = e.message || String(e);
       }
     } else {
-      scoreError = 'Нет ключа OpenRouter — обновлён только текст с hh.ru';
+      scoreError = 'Нет ключа AI-провайдера (GROQ/GOOGLE/OpenRouter) — обновлён только текст с hh.ru';
     }
 
     updateVacancyRecord(id, patch);

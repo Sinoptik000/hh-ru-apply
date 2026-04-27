@@ -104,7 +104,6 @@ font-weight: 600;
 
 ** Hover:** яркость фона +10%
 ** Disabled:** `opacity: 0.5`, `cursor: not-allowed`
-
 ### Карточка (`.card`)
 
 ```css
@@ -115,7 +114,13 @@ padding: 1rem 2.25rem 1rem 1.1rem;
 margin-bottom: 1rem;
 ```
 
+**Структура заголовка (`.card-head`):**
+- **Тип:** Flexbox (`justify-content: space-between`, `align-items: flex-start`)
+- **Заголовок (`.title-link`):** Слева, `flex: 1`, цвет `--accent`.
+- **Скор (`.score-block`):** Справа, фиксированный размер, содержит оценку и иконку "i".
+
 **Состояние новой карточки** (добавлена только что):
+...
 ```css
 border-color: #4CAF50;
 box-shadow: 0 0 16px rgba(76, 175, 80, 0.35);

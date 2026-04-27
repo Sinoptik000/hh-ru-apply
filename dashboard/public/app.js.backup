@@ -1524,33 +1524,15 @@ function formatDescription(desc) {
   return html;
 }
 
-/** Sync textarea value to current variant before switching */
-function syncManualTextareaToVariant() {
-  const ta = document.getElementById('manual-letter-textarea');
-  if (!ta || !manualTabState.variants) return;
-  manualTabState.variants[manualTabState.selectedVariant] = ta.value;
-}
 
 function initManualTabHandlers() {
   const urlInput = document.getElementById('manual-url');
   const loadBtn = document.getElementById('btn-load-vacancy');
   const generateBtn = document.getElementById('btn-generate-letter');
+  const finishBtn = document.getElementById('btn-finish-manual');
   const clearBtn = document.getElementById('btn-clear-manual');
-
-  // Блок 5: Кнопки действий с письмом
-  const saveDraftBtn = document.getElementById('btn-save-draft');
-  const approveBtn = document.getElementById('btn-approve-letter');
-  const declineBtn = document.getElementById('btn-decline-letter');
-  const confirmDeclineBtn = document.getElementById('btn-confirm-decline');
-  const cancelDeclineBtn = document.getElementById('btn-cancel-decline');
-  const declineReasonSection = document.getElementById('manual-decline-reason');
-
-  // Блок 1: Model info button
-  const modelBtn = document.getElementById('manual-model-btn');
-  const modelPanel = document.getElementById('manual-model-panel');
-
-  // Блок 4: Radio buttons for variant selection
-  const variantRadios = document.querySelectorAll('input[name="manual-variant"]');
+  const copyBtn = document.getElementById('btn-copy-letter');
+  const variantTabs = document.querySelectorAll('.manual-variant-tab');
 
   // Load vacancy from URL
   loadBtn?.addEventListener('click', async () => {
@@ -1589,178 +1571,6 @@ function initManualTabHandlers() {
     }
   });
 
-  // ===== Блок 4: Переключение вариантов (радио-кнопки) =====
-  variantRadios.forEach((radio) => {
-    radio.addEventListener('change', () => {
-      const idx = parseInt(radio.value);
-      if (!Number.isFinite(idx) || idx < 0 || idx > 2) return;
-
-      // Save current textarea content before switching
-      syncManualTextareaToVariant();
-
-      manualTabState.selectedVariant = idx;
-
-      // Update textarea with new variant text
-      const ta = document.getElementById('manual-letter-textarea');
-      if (ta && manualTabState.variants) {
-        ta.value = manualTabState.variants[idx] || '';
-      }
-    });
-  });
-
-  // ===== Блок 5: Сохранить правки =====
-  saveDraftBtn?.addEventListener('click', async () => {
-    if (!manualTabState.vacancyId || !manualTabState.variants) {
-      showToast('Нет данных для сохранения', 'bad');
-      return;
-    }
-
-    // Sync current textarea to variant
-    syncManualTextareaToVariant();
-
-    const btnSave = document.getElementById('btn-save-draft');
-    const btnApprove = document.getElementById('btn-approve-letter');
-    const btnDecline = document.getElementById('btn-decline-letter');
-
-    btnSave.disabled = btnApprove.disabled = btnDecline.disabled = true;
-
-    try {
-      await api('/api/cover-letter/save-draft', {
-        method: 'POST',
-        body: JSON.stringify({ id: manualTabState.vacancyId, variants: manualTabState.variants }),
-      });
-      showToast('Правки сохранены', 'good');
-      invalidateCache();
-    } catch (e) {
-      alert(e.message);
-    } finally {
-      btnSave.disabled = btnApprove.disabled = btnDecline.disabled = false;
-    }
-  });
-
-  // ===== Блок 5: Утвердить =====
-  approveBtn?.addEventListener('click', async () => {
-    if (!manualTabState.vacancyId) {
-      showToast('Нет загруженной вакансии', 'bad');
-      return;
-    }
-
-    // Sync current textarea to variant
-    syncManualTextareaToVariant();
-
-    const text = manualTabState.variants?.[manualTabState.selectedVariant] || '';
-    if (!text.trim()) {
-      alert('Введите или выберите текст письма.');
-      return;
-    }
-
-    const btnSave = document.getElementById('btn-save-draft');
-    const btnApprove = document.getElementById('btn-approve-letter');
-    const btnDecline = document.getElementById('btn-decline-letter');
-
-    btnSave.disabled = btnApprove.disabled = btnDecline.disabled = true;
-
-    try {
-      await api('/api/cover-letter/action', {
-        method: 'POST',
-        body: JSON.stringify({ id: manualTabState.vacancyId, action: 'approve', text }),
-      });
-      showToast('Письмо утверждено', 'good');
-
-      // Сброс формы и переключение на вкладку "Подходят"
-      manualTabState = { vacancyId: null, url: null, variants: null, selectedVariant: 0, parsing: false, error: null };
-      invalidateCache();
-      vacancyTabsEl.querySelectorAll('.tab').forEach((b) => b.classList.remove('active'));
-      const approvedTab = vacancyTabsEl.querySelector('[data-status="approved"]');
-      if (approvedTab) approvedTab.classList.add('active');
-      currentStatus = 'approved';
-      listEl.innerHTML = '';
-      await load(true);
-    } catch (e) {
-      alert(e.message);
-      btnSave.disabled = btnApprove.disabled = btnDecline.disabled = false;
-    }
-  });
-
-  // ===== Блок 5: Отклонить (показать поле причины) =====
-  declineBtn?.addEventListener('click', () => {
-    if (!manualTabState.vacancyId) {
-      showToast('Нет загруженной вакансии', 'bad');
-      return;
-    }
-    // Показываем секцию с причиной
-    if (declineReasonSection) {
-      declineReasonSection.hidden = false;
-      // Прокручиваем к ней
-      declineReasonSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-    // Фокус на textarea причины
-    const reasonTa = document.getElementById('manual-decline-textarea');
-    if (reasonTa) reasonTa.focus();
-  });
-
-  // ===== Блок 5: Отмена отклонения =====
-  cancelDeclineBtn?.addEventListener('click', () => {
-    if (declineReasonSection) {
-      declineReasonSection.hidden = true;
-    }
-    const reasonTa = document.getElementById('manual-decline-textarea');
-    if (reasonTa) reasonTa.value = '';
-  });
-
-  // ===== Блок 5: Подтвердить отклонение =====
-  confirmDeclineBtn?.addEventListener('click', async () => {
-    if (!manualTabState.vacancyId) return;
-
-    const reasonTa = document.getElementById('manual-decline-textarea');
-    const reason = reasonTa?.value?.trim() || '';
-
-    const btnSave = document.getElementById('btn-save-draft');
-    const btnApprove = document.getElementById('btn-approve-letter');
-    const btnDecline = document.getElementById('btn-decline-letter');
-
-    btnSave.disabled = btnApprove.disabled = btnDecline.disabled = true;
-    if (confirmDeclineBtn) confirmDeclineBtn.disabled = true;
-    if (cancelDeclineBtn) cancelDeclineBtn.disabled = true;
-
-    try {
-      await api('/api/action', {
-        method: 'POST',
-        body: JSON.stringify({
-          id: manualTabState.vacancyId,
-          action: 'reject',
-          reason: reason,
-        }),
-      });
-      showToast('Вакансия отклонена', 'neutral');
-
-      // Сброс формы
-      manualTabState = { vacancyId: null, url: null, variants: null, selectedVariant: 0, parsing: false, error: null };
-      invalidateCache();
-      renderManualTabUI();
-      showToast('Форма очищена', 'neutral');
-    } catch (e) {
-      alert(e.message);
-      btnSave.disabled = btnApprove.disabled = btnDecline.disabled = false;
-      if (confirmDeclineBtn) confirmDeclineBtn.disabled = false;
-      if (cancelDeclineBtn) cancelDeclineBtn.disabled = false;
-    }
-  });
-
-  // ===== Блок 1: Model info toggle =====
-  if (modelBtn && modelPanel) {
-    modelBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const open = modelPanel.hidden;
-      document.querySelectorAll('.model-info-panel').forEach((p) => {
-        p.hidden = true;
-      });
-      if (open) modelPanel.hidden = false;
-    });
-
-    modelPanel.addEventListener('click', (e) => e.stopPropagation());
-  }
-
   // Generate letter button
   generateBtn?.addEventListener('click', async () => {
     if (!manualTabState.vacancyId) {
@@ -1787,11 +1597,70 @@ function initManualTabHandlers() {
       showToast('Ошибка генерации: ' + e.message, 'bad');
     } finally {
       generateBtn.disabled = false;
-      generateBtn.textContent = 'Сгенерировать письмо';
+      generateBtn.textContent = 'Сгенерировать сопроводительное';
     }
   });
 
-  // ===== Блок 6: Очистить =====
+  // Variant tabs
+  variantTabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const idx = parseInt(tab.dataset.variant);
+      if (!Number.isFinite(idx) || idx < 0) return;
+      manualTabState.selectedVariant = idx;
+      document.querySelectorAll('.manual-variant-tab').forEach((t) => t.classList.remove('active'));
+      tab.classList.add('active');
+      const letterText = document.querySelector('.manual-letter-text');
+      if (letterText && manualTabState.variants) {
+        letterText.textContent = manualTabState.variants[idx] || '';
+      }
+    });
+  });
+
+  // Copy letter
+  copyBtn?.addEventListener('click', async () => {
+    const text = manualTabState.variants?.[manualTabState.selectedVariant] || '';
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('Скопировано!', 'good');
+    } catch {
+      showToast('Не удалось скопировать', 'bad');
+    }
+  });
+
+  // Finish → approve vacancy
+  finishBtn?.addEventListener('click', async () => {
+    if (!manualTabState.vacancyId) {
+      showToast('Нет загруженной вакансии', 'bad');
+      return;
+    }
+    finishBtn.disabled = true;
+    try {
+      const approvedText = manualTabState.variants?.[manualTabState.selectedVariant] || '';
+      await api('/api/vacancy/complete-manual', {
+        method: 'POST',
+        body: JSON.stringify({
+          id: manualTabState.vacancyId,
+          approvedText,
+        }),
+      });
+      showToast('Отправлено в «Подходят»', 'good');
+      manualTabState = { vacancyId: null, url: null, variants: null, selectedVariant: 0, parsing: false, error: null };
+      invalidateCache();
+      // Switch to approved tab
+      vacancyTabsEl.querySelectorAll('.tab').forEach((b) => b.classList.remove('active'));
+      const approvedTab = vacancyTabsEl.querySelector('[data-status="approved"]');
+      if (approvedTab) approvedTab.classList.add('active');
+      currentStatus = 'approved';
+      listEl.innerHTML = '';
+      await load(true);
+    } catch (e) {
+      showToast('Ошибка: ' + e.message, 'bad');
+      finishBtn.disabled = false;
+    }
+  });
+
+  // Clear → сброс UI страницы «Вручную»
   clearBtn?.addEventListener('click', async () => {
     const hasVacancy = !!manualTabState.vacancyId;
     const hasInput = !!(manualTabState.url || document.getElementById('manual-url')?.value?.trim());
@@ -1802,13 +1671,15 @@ function initManualTabHandlers() {
     }
 
     if (hasVacancy) {
-      // Удаляем с сервера без подтверждения как указано в ТЗ
+      // Вакансия загружена — удалить с сервера, затем сбросить UI
+      if (!confirm('Удалить вакансию с вкладки «Вручную»?')) return;
       clearBtn.disabled = true;
       try {
         await api('/api/dismiss', {
           method: 'POST',
           body: JSON.stringify({ id: manualTabState.vacancyId }),
         });
+        showToast('Удалено', 'good');
       } catch (e) {
         showToast('Ошибка при удалении: ' + e.message, 'bad');
         clearBtn.disabled = false;
@@ -1822,7 +1693,7 @@ function initManualTabHandlers() {
     manualTabState = { vacancyId: null, url: null, variants: null, selectedVariant: 0, parsing: false, error: null };
     invalidateCache();
     renderManualTabUI();
-    showToast('Страница очищена', 'neutral');
+    if (!hasVacancy) showToast('Страница очищена', 'neutral');
   });
 }
 
@@ -1924,56 +1795,47 @@ function syncVacancyTabs() {
 }
 
 function updateRefreshSectionButton() {
-    const btn = document.getElementById('btn-refresh-section');
-    const lbl = document.getElementById('refresh-section-label');
-    if (!btn) return;
-    const items = cachedItems[currentStatus];
-    if (items === null) {
-        btn.hidden = true;
-        if (lbl) lbl.hidden = true;
-        return;
-    }
-    const incompleteCount = getIncompleteCount(items);
-    if (incompleteCount === 0 || bulkRefreshState.active) {
-        btn.hidden = true;
-        if (lbl) lbl.hidden = true;
-        return;
-    }
-    btn.hidden = false;
-    if (lbl) {
-        lbl.hidden = false;
-        const text = incompleteCount > BATCH_LIMIT ? `${BATCH_LIMIT}+` : incompleteCount;
-        lbl.innerHTML = `${text} <span>вакансий</span>`;
-    }
+const btn = document.getElementById('btn-refresh-section');
+if (!btn) return;
+const items = cachedItems[currentStatus];
+if (items === null) {
+btn.hidden = true;
+return;
+}
+const incompleteCount = getIncompleteCount(items);
+if (incompleteCount === 0 || bulkRefreshState.active) {
+btn.hidden = true;
+return;
+}
+btn.hidden = false;
+const countEl = btn.querySelector('.refresh-count');
+if (countEl) {
+countEl.textContent = incompleteCount > BATCH_LIMIT ? `${BATCH_LIMIT}+` : incompleteCount;
+}
 }
 
 function setRefreshSectionLoading(loading, total) {
-    const btn = document.getElementById('btn-refresh-section');
-    const lbl = document.getElementById('refresh-section-label');
-    if (!btn) return;
-    bulkRefreshState.active = loading;
-    bulkRefreshState.total = total;
-    bulkRefreshState.completed = 0;
-    btn.disabled = loading;
-    btn.classList.toggle('loading', loading);
-    if (loading) {
-        btn.style.setProperty('--progress', '0%');
-        if (lbl) lbl.textContent = `0 / ${total}`;
-    } else {
-        btn.style.setProperty('--progress', '100%');
-        setTimeout(() => btn.style.removeProperty('--progress'), 600);
-        if (lbl) lbl.hidden = true;
-    }
+const btn = document.getElementById('btn-refresh-section');
+if (!btn) return;
+bulkRefreshState.active = loading;
+bulkRefreshState.total = total;
+bulkRefreshState.completed = 0;
+btn.disabled = loading;
+btn.classList.toggle('loading', loading);
+if (loading) {
+btn.style.setProperty('--progress', '0%');
+} else {
+btn.style.setProperty('--progress', '100%');
+setTimeout(() => btn.style.removeProperty('--progress'), 600);
+}
 }
 
 function updateRefreshSectionProgress(completed, total) {
-    const btn = document.getElementById('btn-refresh-section');
-    const lbl = document.getElementById('refresh-section-label');
-    if (!btn) return;
-    bulkRefreshState.completed = completed;
-    const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
-    btn.style.setProperty('--progress', `${pct}%`);
-    if (lbl) lbl.textContent = `${completed} / ${total}`;
+const btn = document.getElementById('btn-refresh-section');
+if (!btn) return;
+bulkRefreshState.completed = completed;
+const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+btn.style.setProperty('--progress', `${pct}%`);
 }
 
 async function refreshIncompleteInSection() {

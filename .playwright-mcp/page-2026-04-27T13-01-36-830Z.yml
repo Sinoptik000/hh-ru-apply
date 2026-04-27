@@ -1,0 +1,64 @@
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - heading "Очередь вакансий" [level=1] [ref=e4]
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - button "📝 Фильтры" [ref=e8] [cursor=pointer]
+          - button "➕ Добавить" [ref=e9] [cursor=pointer]
+          - button "Sourcing" [ref=e10] [cursor=pointer]
+        - button "Лог отклика hh" [ref=e13] [cursor=pointer]
+    - generic [ref=e14]:
+      - tablist [ref=e15]:
+        - tab "Вручную 0" [active] [ref=e16] [cursor=pointer]
+        - tab "На проверке 60" [selected] [ref=e24] [cursor=pointer]
+        - tab "Подходят 10" [ref=e25] [cursor=pointer]
+        - tab "Отклонённые 76" [ref=e26] [cursor=pointer]
+      - generic [ref=e20]:
+        - textbox "Поиск..." [ref=e21]
+        - button "×" [ref=e22] [cursor=pointer]
+  - main [ref=e23]:
+    - generic [ref=e1899]:
+      - generic [ref=e1900]:
+        - generic [ref=e1901]: Ссылка на вакансию hh.ru
+        - generic [ref=e1902]:
+          - textbox "Ссылка на вакансию hh.ru" [ref=e1903]:
+            - /placeholder: https://hh.ru/vacancy/12345678
+          - button "Загрузить" [ref=e1904] [cursor=pointer]
+      - generic [ref=e1905]:
+        - generic [ref=e1906]:
+          - generic [ref=e1907]:
+            - heading "Вручную" [level=2] [ref=e1908]
+            - heading "Вставьте ссылку и нажмите «Загрузить»" [level=3] [ref=e1909]
+          - generic [ref=e1913]: —
+        - generic [ref=e1914]:
+          - paragraph
+        - generic [ref=e1916]: Описание вакансии
+        - group "Вариант" [ref=e1919]:
+          - generic [ref=e1920]: Вариант
+          - generic [ref=e1921]:
+            - radio "Вариант 1" [checked] [disabled] [ref=e1922]
+            - generic [ref=e1923] [cursor=pointer]: Вариант 1
+          - generic [ref=e1924]:
+            - radio "Вариант 2" [disabled] [ref=e1925]
+            - generic [ref=e1926] [cursor=pointer]: Вариант 2
+          - generic [ref=e1927]:
+            - radio "Вариант 3" [disabled] [ref=e1928]
+            - generic [ref=e1929] [cursor=pointer]: Вариант 3
+        - generic [ref=e1930]:
+          - generic [ref=e1931]: Текст (правки сохраняются и учитываются при следующей генерации)
+          - textbox "Текст (правки сохраняются и учитываются при следующей генерации)" [disabled] [ref=e1932]
+          - generic [ref=e1933]:
+            - generic [ref=e1934]: Причина отклонения
+            - textbox "Причина отклонения" [ref=e1935]:
+              - /placeholder: Укажите причину отклонения...
+            - generic [ref=e1936]:
+              - button "Подтвердить отклонение" [ref=e1937] [cursor=pointer]
+              - button "Отмена" [ref=e1938] [cursor=pointer]
+          - generic [ref=e1939]:
+            - button "Сохранить правки" [disabled] [ref=e1940]
+            - button "Утвердить" [disabled] [ref=e1941]
+            - button "Отклонить" [disabled] [ref=e1942]
+        - generic [ref=e1943]:
+          - button "Сначала загрузите вакансию" [disabled] [ref=e1944]
+          - button "Очистить" [ref=e1945] [cursor=pointer]

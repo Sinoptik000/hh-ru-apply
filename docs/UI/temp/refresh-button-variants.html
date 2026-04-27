@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Кнопка Обновить — варианты UI</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    padding: 40px;
+    min-height: 100vh;
+  }
+
+  h1 {
+    color: #fff;
+    margin-bottom: 10px;
+    font-size: 24px;
+  }
+  p { color: #888; margin-bottom: 40px; font-size: 14px; }
+
+  .variants {
+    display: flex;
+    flex-direction: column;
+    gap: 60px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .variant-card {
+    background: #16213e;
+    border-radius: 16px;
+    padding: 32px;
+    border: 1px solid #0f3460;
+  }
+
+  .variant-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #e94560;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 24px;
+  }
+
+  .demo-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
+    background: #0f0f23;
+    border-radius: 12px;
+    padding: 24px;
+  }
+
+  /* ═══════════════════════════════════════
+     VARIANT 1 — Progress Ring
+  ═══════════════════════════════════════ */
+
+  .v1-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .v1-btn {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: #16213e;
+    border: 2px solid #e94560;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .v1-btn:hover {
+    background: #1a1a4a;
+    box-shadow: 0 0 20px rgba(233, 69, 96, 0.4);
+  }
+
+  .v1-btn .ring {
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    border-top-color: #e94560;
+    animation: spin 1.5s linear infinite;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .v1-btn.loading .ring {
+    opacity: 1;
+  }
+
+  .v1-btn .icon {
+    font-size: 28px;
+    transition: transform 0.3s;
+  }
+
+  .v1-btn.loading .icon {
+    animation: pulse 0.8s ease-in-out infinite;
+  }
+
+  .v1-label {
+    font-size: 13px;
+    color: #888;
+    text-align: center;
+  }
+
+  .v1-label span {
+    color: #e94560;
+    font-weight: 600;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+  }
+
+  /* ═══════════════════════════════════════
+     VARIANT 2 — Fullwidth Bar
+  ═══════════════════════════════════════ */
+
+  .v2-progress-track {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #e94560 var(--pct, 0%), transparent var(--pct, 0%));
+    opacity: 0.3;
+    transition: --pct 0.4s ease;
+  }
+
+  .v2-btn {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+    padding: 16px 24px;
+    border-radius: 12px;
+    background: #16213e;
+    border: 2px solid #0f3460;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .v2-btn:hover {
+    border-color: #e94560;
+    box-shadow: 0 4px 20px rgba(233, 69, 96, 0.2);
+  }
+
+  .v2-btn.loading {
+    border-color: #e94560;
+  }
+
+  .v2-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+    z-index: 1;
+    transition: transform 0.3s;
+  }
+
+  .v2-btn.loading .v2-icon {
+    animation: spin 1s linear infinite;
+  }
+
+  .v2-text {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 500;
+    color: #e0e0e0;
+    z-index: 1;
+  }
+
+  .v2-text span { color: #e94560; font-weight: 700; }
+
+  .v2-check {
+    font-size: 24px;
+    flex-shrink: 0;
+    z-index: 1;
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.3s ease;
+  }
+
+  .v2-btn.done .v2-check {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .v2-btn.done .v2-text { display: none; }
+
+  /* ═══════════════════════════════════════
+     VARIANT 3 — Pill with Orbital
+  ═══════════════════════════════════════ */
+
+  .v3-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .v3-btn {
+    position: relative;
+    width: 180px;
+    height: 56px;
+    border-radius: 28px;
+    background: linear-gradient(135deg, #16213e 0%, #1a1a4a 100%);
+    border: 2px solid #e94560;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    overflow: visible;
+  }
+
+  .v3-btn:hover {
+    box-shadow: 0 0 30px rgba(233, 69, 96, 0.5);
+    transform: scale(1.05);
+  }
+
+  .v3-btn .orb {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #e94560;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .v3-btn.loading .orb {
+    opacity: 1;
+  }
+
+  .v3-btn .orb-1 {
+    animation: orbit1 1.5s linear infinite;
+  }
+
+  .v3-btn .orb-2 {
+    animation: orbit2 1.5s linear infinite;
+  }
+
+  .v3-btn .orb-1 {
+    top: -4px; right: 20px;
+  }
+
+  .v3-btn .orb-2 {
+    bottom: -4px; left: 20px;
+  }
+
+  @keyframes orbit1 {
+    0%   { transform: rotate(0deg) translateX(90px) rotate(0deg); opacity: 0; }
+    20%  { opacity: 1; }
+    80%  { opacity: 1; }
+    100% { transform: rotate(360deg) translateX(90px) rotate(-360deg); opacity: 0; }
+  }
+
+  @keyframes orbit2 {
+    0%   { transform: rotate(180deg) translateX(90px) rotate(-180deg); opacity: 0; }
+    20%  { opacity: 1; }
+    80%  { opacity: 1; }
+    100% { transform: rotate(540deg) translateX(90px) rotate(-540deg); opacity: 0; }
+  }
+
+  .v3-icon {
+    font-size: 22px;
+    z-index: 1;
+  }
+
+  .v3-btn.loading .v3-icon {
+    animation: spin 2s linear infinite;
+  }
+
+  .v3-status {
+    font-size: 12px;
+    color: #666;
+    text-align: center;
+    height: 20px;
+    transition: all 0.3s;
+  }
+
+  .v3-status.good { color: #4ade80; }
+  .v3-status.neutral { color: #e94560; }
+
+  /* Demo controls */
+  .demo-controls {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .demo-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid #333;
+    background: #0f0f23;
+    color: #888;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .demo-btn:hover {
+    border-color: #e94560;
+    color: #e94560;
+  }
+
+  .variant-desc {
+    margin-top: 16px;
+    font-size: 13px;
+    color: #666;
+    text-align: center;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<h1>Варианты UI — кнопка "Обновить"</h1>
+<p>Все варианты показывают idle / loading / done состояния. Нажмите кнопки под демо чтобы переключать.</p>
+
+<div class="variants">
+
+  <!-- ══ VARIANT 1: Progress Ring ══ -->
+  <div class="variant-card">
+    <div class="variant-title">Вариант 1 — Progress Ring</div>
+    <div class="demo-area">
+      <div class="v1-container">
+        <button class="v1-btn" id="v1-btn" onclick="toggleV1()">
+          <div class="ring"></div>
+          <span class="icon">🔄</span>
+        </button>
+        <div class="v1-label" id="v1-label">12 <span>вакансий</span> для обновления</div>
+      </div>
+    </div>
+    <div class="demo-controls">
+      <button class="demo-btn" onclick="simV1loading()">▶ Loading</button>
+      <button class="demo-btn" onclick="simV1done()">✓ Готово</button>
+      <button class="demo-btn" onclick="simV1reset()">↺ Сброс</button>
+    </div>
+    <div class="variant-desc">Круглая кнопка 72×72px с вращающимся кольцевым индикатором. Под кнопкой — счётчик оставшихся вакансий.</div>
+  </div>
+
+  <!-- ══ VARIANT 2: Fullwidth Bar ══ -->
+  <div class="variant-card">
+    <div class="variant-title">Вариант 2 — Fullwidth Bar</div>
+    <div class="demo-area">
+      <div style="width:100%; display:flex; justify-content:center;">
+        <button class="v2-btn" id="v2-btn" onclick="toggleV2()">
+          <div class="v2-progress-track" id="v2-track"></div>
+          <span class="v2-icon" id="v2-icon">🔄</span>
+          <span class="v2-text" id="v2-text">Обновить <span>12</span> вакансий</span>
+          <span class="v2-check" id="v2-check">✓</span>
+        </button>
+      </div>
+    </div>
+    <div class="demo-controls">
+      <button class="demo-btn" onclick="simV2loading()">▶ Loading</button>
+      <button class="demo-btn" onclick="simV2done()">✓ Готово</button>
+      <button class="demo-btn" onclick="simV2reset()">↺ Сброс</button>
+    </div>
+    <div class="variant-desc">Кнопка на всю ширину контейнера. Прогресс-бар окрашивает фон слева направо. После завершения — галочка на 2 сек.</div>
+  </div>
+
+  <!-- ══ VARIANT 3: Pill with Orbital ══ -->
+  <div class="variant-card">
+    <div class="variant-title">Вариант 3 — Pill with Orbital</div>
+    <div class="demo-area">
+      <div class="v3-container">
+        <button class="v3-btn" id="v3-btn" onclick="toggleV3()">
+          <div class="orb orb-1"></div>
+          <div class="orb orb-2"></div>
+          <span class="v3-icon">🔄</span>
+        </button>
+        <div class="v3-status" id="v3-status">8 из 20 обновлено</div>
+      </div>
+    </div>
+    <div class="demo-controls">
+      <button class="demo-btn" onclick="simV3loading()">▶ Loading</button>
+      <button class="demo-btn" onclick="simV3done()">✓ Готово</button>
+      <button class="demo-btn" onclick="simV3reset()">↺ Сброс</button>
+    </div>
+    <div class="variant-desc">Кнопка-капсула ~180×56px. Две точки-орбиты вращаются вокруг кнопки во время загрузки. Под кнопкой — облачко статуса.</div>
+  </div>
+
+</div>
+
+<script>
+  // V1
+  let v1State = 'idle'; // idle | loading | done
+  function toggleV1() {
+    if (v1State === 'idle') simV1loading();
+    else if (v1State === 'loading') simV1done();
+    else simV1reset();
+  }
+  function simV1loading() {
+    const btn = document.getElementById('v1-btn');
+    btn.classList.add('loading');
+    v1State = 'loading';
+  }
+  function simV1done() {
+    const btn = document.getElementById('v1-btn');
+    btn.classList.remove('loading');
+    v1State = 'done';
+  }
+  function simV1reset() {
+    const btn = document.getElementById('v1-btn');
+    btn.classList.remove('loading');
+    v1State = 'idle';
+  }
+
+  // V2
+  let v2State = 'idle';
+  function toggleV2() {
+    if (v2State === 'idle') simV2loading();
+    else if (v2State === 'loading') simV2done();
+    else simV2reset();
+  }
+  function simV2loading() {
+    const btn = document.getElementById('v2-btn');
+    btn.classList.add('loading');
+    btn.classList.remove('done');
+    v2State = 'loading';
+    let pct = 0;
+    const track = document.getElementById('v2-track');
+    const interval = setInterval(() => {
+      pct += 5;
+      track.style.setProperty('--pct', pct + '%');
+      if (pct >= 100) clearInterval(interval);
+    }, 100);
+  }
+  function simV2done() {
+    const btn = document.getElementById('v2-btn');
+    btn.classList.remove('loading');
+    btn.classList.add('done');
+    v2State = 'done';
+    const track = document.getElementById('v2-track');
+    track.style.setProperty('--pct', '100%');
+    setTimeout(() => {
+      if (v2State === 'done') simV2reset();
+    }, 2000);
+  }
+  function simV2reset() {
+    const btn = document.getElementById('v2-btn');
+    const track = document.getElementById('v2-track');
+    btn.classList.remove('loading', 'done');
+    track.style.setProperty('--pct', '0%');
+    v2State = 'idle';
+  }
+
+  // V3
+  let v3State = 'idle';
+  function toggleV3() {
+    if (v3State === 'idle') simV3loading();
+    else if (v3State === 'loading') simV3done();
+    else simV3reset();
+  }
+  function simV3loading() {
+    const btn = document.getElementById('v3-btn');
+    btn.classList.add('loading');
+    v3State = 'loading';
+  }
+  function simV3done() {
+    const btn = document.getElementById('v3-btn');
+    btn.classList.remove('loading');
+    v3State = 'done';
+    const status = document.getElementById('v3-status');
+    status.textContent = 'Готово ✓';
+    status.className = 'v3-status good';
+    setTimeout(() => {
+      if (v3State === 'done') simV3reset();
+    }, 2000);
+  }
+  function simV3reset() {
+    const btn = document.getElementById('v3-btn');
+    btn.classList.remove('loading');
+    v3State = 'idle';
+    const status = document.getElementById('v3-status');
+    status.textContent = '12 вакансий для обновления';
+    status.className = 'v3-status';
+  }
+</script>
+
+</body>
+</html>

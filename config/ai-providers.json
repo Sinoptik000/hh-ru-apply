@@ -3,7 +3,7 @@
     {
       "name": "openrouter",
       "enabled": true,
-      "priority": 1,
+      "priority": 3,
       "model": "openrouter/free",
       "envKey": "OpenRouter_API_KEY",
       "endpoint": "https://openrouter.ai/api/v1/chat/completions",
@@ -34,7 +34,7 @@
     {
       "name": "groq",
       "enabled": true,
-      "priority": 3,
+      "priority": 1,
       "model": "llama-3.3-70b-versatile",
       "envKey": "GROQ_API_KEY",
       "endpoint": "https://api.groq.com/openai/v1/chat/completions",

@@ -1,7 +1,7 @@
 /**
- * Сбор вакансий: поиск → парсинг → фильтры → оценка через OpenRouter (бесплатные модели по умолчанию) → data/vacancies-queue.json.
+ * Сбор вакансий: поиск → парсинг → фильтры → оценка через AI-каскад (Groq/Google/OpenRouter) → data/vacancies-queue.json.
  *
- * Перед запуском: npm run login, в secrets — OpenRouter_API_KEY.
+ * Перед запуском: npm run login, в secrets — хотя бы один ключ из GROQ_API_KEY / GOOGLE_API_KEY / OpenRouter_API_KEY.
  * Флаги: --skip-llm | --skip-gemini — без вызова LLM (score=0).
  */
 
@@ -22,6 +22,7 @@ import {
   getOpenRouterApiKey,
   scoreVacancyWithOpenRouter,
 } from '../lib/openrouter-score.mjs';
+import { getEnabledProviders } from '../lib/ai-cascade.mjs';
 import { addVacancyRecord, knownVacancyIds } from '../lib/store.mjs';
 import { loadRejectedVacancyIds } from '../lib/rejected-ids.mjs';
 
@@ -92,8 +93,8 @@ function logSkipped(payload) {
 async function main() {
   const prefs = loadPreferences();
 
-  if (!skipLlm && !getOpenRouterApiKey()) {
-    console.error('Нужен OpenRouter_API_KEY (или OPENROUTER_API_KEY) в .env / .env.local / config/secrets.local.env');
+  if (!skipLlm && !getEnabledProviders().length && !getOpenRouterApiKey()) {
+    console.error('Нужен хотя бы один ключ: GROQ_API_KEY / GOOGLE_API_KEY / OpenRouter_API_KEY (или OPENROUTER_API_KEY) в .env / .env.local / config/secrets.local.env');
     console.error('Шаблон: config/secrets.example.env  |  Либо: npm run harvest -- --skip-llm');
     process.exit(1);
   }

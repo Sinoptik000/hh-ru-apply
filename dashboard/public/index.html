@@ -78,9 +78,10 @@ class="btn-refresh-section"
 title="Обновить незагруженные вакансии в текущем разделе"
 hidden
 >
+<span class="ring"></span>
 <span class="refresh-icon">🔄</span>
-<span class="refresh-count"></span>
 </button>
+<span id="refresh-section-label" class="refresh-section-label" hidden></span>
 </div>
 </header>
 <main id="list"></main>
@@ -88,6 +89,7 @@ hidden
       <article class="card">
         <button type="button" class="card-dismiss" aria-label="Удалить из очереди" title="Удалить без обработки">×</button>
         <div class="card-head">
+          <a class="title-link" target="_blank" rel="noopener"></a>
           <div class="score-block">
             <div class="score-row">
               <div class="score-hover-wrap">
@@ -100,7 +102,6 @@ hidden
               </div>
             </div>
           </div>
-          <a class="title-link" target="_blank" rel="noopener"></a>
         </div>
         <div class="meta"></div>
         <div class="workplace-row">
