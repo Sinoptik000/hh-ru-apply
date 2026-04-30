@@ -148,12 +148,41 @@ async function scrapeVacancyCard(page, vacancyUrl) {
   await page.waitForTimeout(2500);
   return page.evaluate(() => {
     const t = (sel) => document.querySelector(sel)?.textContent?.replace(/\s+/g, ' ')?.trim() || '';
-    const title = t('h1[data-qa="vacancy-title"]') || t('h1');
+    // Заголовок вакансии: ищем h1 (старый) или heading с level=1 (новый)
+    const title =
+      t('h1[data-qa="vacancy-title"]') ||
+      t('h1') ||
+      (() => {
+        const heading = document.querySelector('[role="heading"][aria-level="1"]');
+        return heading?.textContent?.trim() || '';
+      })();
     const company =
       t('[data-qa="vacancy-company-name"]') ||
       t('a[data-qa="vacancy-company-name"]') ||
       t('[data-qa="vacancy-serp__vacancy-employer"]');
-    const salary = t('[data-qa="vacancy-salary"]');
+    // Зарплата: ищем в блоке рядом с заголовком вакансии (не в блоке "Вакансия дня")
+    const salary =
+      t('[data-qa="vacancy-salary"]') ||
+      (() => {
+        // Ищем зарплату в первом generic-блоке после heading level=1
+        const heading = document.querySelector('[role="heading"][aria-level="1"], h1');
+        if (!heading) return '';
+        const parent = heading.parentElement;
+        if (!parent) return '';
+        // Берём текст из первых children (обычно там зарплата)
+        const text = parent.textContent || '';
+        // Ищем цифры и валюту
+        const salaryMatch = text.match(/от\s*[\d\s\u00A0]+\s*₽|до\s*[\d\s\u00A0]+\s*₽|[\d\s\u00A0]+\s*–\s*[\d\s\u00A0]+\s*₽/);
+        if (salaryMatch) {
+          const fullText = text.replace(/\s+/g, ' ').trim();
+          const start = Math.max(0, fullText.indexOf(salaryMatch[0]) - 20);
+          const end = Math.min(fullText.length, fullText.indexOf(salaryMatch[0]) + salaryMatch[0].length + 30);
+          let extracted = fullText.slice(start, end).trim();
+          if (extracted.includes('не указан') || extracted.includes('дохода')) return '';
+          return extracted;
+        }
+        return '';
+      })();
     let desc =
       t('[data-qa="vacancy-description"]') ||
       t('[data-qa="vacancy-view-vacancyDescription"]') ||

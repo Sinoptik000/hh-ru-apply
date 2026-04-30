@@ -704,6 +704,20 @@ applyLogModalEl?.querySelector('[data-close-apply-log]')?.addEventListener('clic
 applyLogModalEl?.querySelector('.modal-close--apply-log')?.addEventListener('click', closeApplyLogModal);
 applyLogModalEl?.querySelector('.btn-refresh-apply-log')?.addEventListener('click', () => refreshApplyLogModal());
 
+document.querySelector('.btn-codegen')?.addEventListener('click', async () => {
+  const btn = document.querySelector('.btn-codegen');
+  btn.disabled = true;
+  try {
+    const res = await api('/api/codegen-hh', { method: 'POST' });
+    const pid = res.pid != null ? ` PID ${res.pid}` : '';
+    showToast(`Codegen запущен${pid}. Смотрите лог в терминале.`, 'neutral');
+  } catch (e) {
+    showToast(`Ошибка: ${e.message}`, 'bad');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
 function startSourcingPolling(total, sourcingBtn) {
   // Очищаем предыдущий интервал если есть
   if (sourcingPollInterval) {

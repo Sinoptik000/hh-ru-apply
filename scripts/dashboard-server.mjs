@@ -862,7 +862,6 @@ child.on('exit', (code, signal) => {
 
   // --- Sourcing progress endpoint ---
   if (req.method === 'GET' && pathname === '/api/sourcing/progress') {
-    // Обновляем прогресс из лога если активен
     if (sourcingProgress.active) {
       const progressLogFile = path.join(DATA_DIR, 'sourcing-progress.log');
       updateProgressFromLog(progressLogFile);
@@ -870,9 +869,48 @@ child.on('exit', (code, signal) => {
 
     return sendJson(res, 200, {
       ...sourcingProgress,
-      percent: sourcingProgress.total > 0 
-        ? Math.round((sourcingProgress.completed / sourcingProgress.total) * 100) 
+      percent: sourcingProgress.total > 0
+        ? Math.round((sourcingProgress.completed / sourcingProgress.total) * 100)
         : 0,
+    });
+  }
+
+  if (req.method === 'POST' && pathname === '/api/codegen-hh') {
+    const codegenScript = path.join(ROOT, 'scripts', 'codegen-hh.mjs');
+    if (!fs.existsSync(codegenScript)) {
+      return sendJson(res, 404, { error: 'Скрипт hh-codegen.mjs не найден' });
+    }
+
+    const logFile = path.join(DATA_DIR, 'hh-codegen.log');
+    const logFd = fs.openSync(logFile, 'a');
+    let child;
+    try {
+      child = spawn(process.execPath, [codegenScript], {
+        cwd: ROOT,
+        detached: true,
+        windowsHide: true,
+        stdio: ['ignore', logFd, logFd],
+        env: process.env,
+      });
+    } finally {
+      fs.closeSync(logFd);
+    }
+
+    child.on('exit', (code, signal) => {
+      const line = `\n--- codegen exit code=${code} signal=${signal || ''} at ${new Date().toISOString()} ---\n`;
+      try {
+        fs.appendFileSync(logFile, line, 'utf8');
+      } catch {
+        /* ignore */
+      }
+    });
+
+    child.unref();
+
+    return sendJson(res, 200, {
+      ok: true,
+      pid: child.pid,
+      logFile: path.relative(ROOT, logFile),
     });
   }
 
