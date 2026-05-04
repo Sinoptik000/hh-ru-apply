@@ -3,8 +3,19 @@ const tpl = document.getElementById('card-tpl');
 
 const vacancyTabsEl = document.querySelector('.tabs-underlined');
 
-let currentStatus = 'pending';
+let currentStatus = 'manual';
 let currentSearchQuery = '';
+const VALID_STATUSES = ['manual', 'pending', 'approved', 'rejected'];
+const STATUS_PATHS = {
+  manual: '/vacancies/manual',
+  pending: '/vacancies/pending',
+  approved: '/vacancies/approved',
+  rejected: '/vacancies/rejected',
+};
+let openDraftRecordId = null;
+let openApprovedRecordId = null;
+let openVacancyDetailRecordId = null;
+let suppressRouteSync = false;
 
 /** Нормализованные веса для подсказки к скору (как в lib/openrouter-score.mjs) */
 let scoreWeights = { vacancy: 0.35, cvMatch: 0.65 };
@@ -14,6 +25,7 @@ let draftModalState = null;
 
 /** @type {ReturnType<typeof setInterval> | null} */
 let applyLogRefreshTimer = null;
+let vacancyDetailState = null;
 
 /** Счётчики по статусам */
 let vacancyCounts = { manual: 0, pending: 0, approved: 0, rejected: 0 };
@@ -106,19 +118,30 @@ async function api(path, opts = {}) {
   return data;
 }
 
-async function requestCoverLetterGenerate(id, force = false) {
+async function requestCoverLetterGenerate(id, force = false, templateType = null) {
+  const resolvedTemplateType = normalizeTemplateType(templateType || manualTabState.templateType);
   return api('/api/cover-letter/generate', {
     method: 'POST',
-    body: JSON.stringify({ id, force }),
+    body: JSON.stringify({ id, force, templateType: resolvedTemplateType }),
   });
+}
+
+function normalizeTemplateType(raw) {
+  return raw === 'sales' ? 'sales' : 'operations';
+}
+
+function templateTypeLabel(type) {
+  return normalizeTemplateType(type) === 'sales' ? 'Sales менеджер' : 'Операционный менеджер';
 }
 
 function closeDraftModal() {
   const modal = document.getElementById('draft-modal');
   if (!modal) return;
   modal.hidden = true;
+  openDraftRecordId = null;
   draftModalState = null;
   document.removeEventListener('keydown', onDraftModalEscape);
+  syncRouteWithUI({ replace: true });
 }
 
 function onDraftModalEscape(e) {
@@ -129,7 +152,9 @@ function closeApprovedLetterModal() {
   const modal = document.getElementById('approved-letter-modal');
   if (!modal) return;
   modal.hidden = true;
+  openApprovedRecordId = null;
   document.removeEventListener('keydown', onApprovedModalEscape);
+  syncRouteWithUI({ replace: true });
 }
 
 function closeApplyLogModal() {
@@ -141,6 +166,7 @@ function closeApplyLogModal() {
   if (!modal) return;
   modal.hidden = true;
   document.removeEventListener('keydown', onApplyLogModalEscape);
+  syncRouteWithUI({ replace: true });
 }
 
 function onApplyLogModalEscape(e) {
@@ -180,6 +206,7 @@ function openApplyLogModal() {
   document.addEventListener('keydown', onApplyLogModalEscape);
   refreshApplyLogModal();
   applyLogRefreshTimer = setInterval(() => refreshApplyLogModal(), 2500);
+  syncRouteWithUI();
 }
 
 function onApprovedModalEscape(e) {
@@ -192,8 +219,10 @@ function openApprovedLetterModal(item) {
   const text = String(item.coverLetter?.approvedText || '').trim();
   modal.querySelector('.modal-vacancy-approved').textContent = item.title || item.url || '';
   modal.querySelector('.modal-approved-text').textContent = text;
+  openApprovedRecordId = item.id || null;
   modal.hidden = false;
   document.addEventListener('keydown', onApprovedModalEscape);
+  syncRouteWithUI();
 }
 
 function openDraftModal(item) {
@@ -202,6 +231,7 @@ function openDraftModal(item) {
   const body = modal.querySelector('.modal-draft-body');
   const vacEl = modal.querySelector('.modal-vacancy');
   vacEl.textContent = item.title || item.url || '';
+  openDraftRecordId = item.id || null;
   body.innerHTML = '';
 
   const raw = item.coverLetter?.variants || [];
@@ -214,6 +244,7 @@ function openDraftModal(item) {
     modal.hidden = false;
     document.addEventListener('keydown', onDraftModalEscape);
     draftModalState = null;
+    syncRouteWithUI();
     return;
   }
 
@@ -364,6 +395,267 @@ function openDraftModal(item) {
 
   modal.hidden = false;
   document.addEventListener('keydown', onDraftModalEscape);
+  syncRouteWithUI();
+}
+
+function formatDateTime(value) {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleString('ru-RU');
+}
+
+function closeVacancyDetailModal({ syncRoute = true } = {}) {
+  const modal = document.getElementById('vacancy-detail-modal');
+  if (!modal) return;
+  modal.hidden = true;
+  openVacancyDetailRecordId = null;
+  vacancyDetailState = null;
+  document.removeEventListener('keydown', onVacancyDetailModalEscape);
+  if (syncRoute) syncRouteWithUI({ replace: true });
+}
+
+function onVacancyDetailModalEscape(e) {
+  if (e.key === 'Escape') closeVacancyDetailModal();
+}
+
+function getItemById(id, preferredStatus = currentStatus) {
+  const statuses = [preferredStatus, 'manual', 'pending', 'approved', 'rejected'].filter(
+    (v, idx, arr) => VALID_STATUSES.includes(v) && arr.indexOf(v) === idx
+  );
+  for (const status of statuses) {
+    const list = cachedItems[status] || [];
+    const found = list.find((x) => x.id === id);
+    if (found) return found;
+  }
+  return null;
+}
+
+function setVacancyDetailBusy(disabled) {
+  const modal = document.getElementById('vacancy-detail-modal');
+  if (!modal) return;
+  modal
+    .querySelectorAll('button, select, textarea')
+    .forEach((el) => {
+      if (el.classList.contains('modal-close--vacancy-detail')) return;
+      el.disabled = disabled;
+    });
+}
+
+async function reloadVacancyDetailItem() {
+  if (!vacancyDetailState?.id) return null;
+  invalidateCache();
+  await load(true);
+  const latest = getItemById(vacancyDetailState.id, vacancyDetailState.status);
+  if (!latest) {
+    closeVacancyDetailModal();
+    return null;
+  }
+  openVacancyDetailModal(latest, { preserveRoute: true });
+  return latest;
+}
+
+function openVacancyDetailModal(item, { preserveRoute = false } = {}) {
+  const modal = document.getElementById('vacancy-detail-modal');
+  if (!modal || !item?.id) return;
+
+  const variants = Array.isArray(item.coverLetter?.variants)
+    ? item.coverLetter.variants.map((x) => String(x || ''))
+    : [];
+  const approvedText = String(item.coverLetter?.approvedText || '').trim();
+  const letterText = approvedText || variants[0] || '';
+
+  vacancyDetailState = {
+    id: item.id,
+    status: item.status || currentStatus,
+    variants,
+    selectedVariant: 0,
+    editedText: letterText,
+  };
+  openVacancyDetailRecordId = item.id;
+
+  modal.querySelector('#vacancy-detail-title').textContent = item.title || item.url || 'Вакансия';
+  modal.querySelector('.vacancy-detail-company').textContent = item.company || '';
+  modal.querySelector('.vacancy-detail-status').textContent = `Статус: ${item.status || '—'}`;
+  modal.querySelector('.vacancy-detail-score').textContent =
+    `Скор: ${item.scoreOverall ?? item.geminiScore ?? '—'} (vacancy: ${item.scoreVacancy ?? '—'}, cv: ${item.scoreCvMatch ?? '—'})`;
+  modal.querySelector('.vacancy-detail-model').textContent =
+    `Модель: ${item.openRouterModel || '—'}`;
+
+  const openHhBtn = modal.querySelector('.btn-open-hh');
+  openHhBtn.hidden = !item.url;
+  openHhBtn.onclick = () => {
+    if (item.url) window.open(item.url, '_blank', 'noopener');
+  };
+  modal.querySelector('.btn-back-list').onclick = () => closeVacancyDetailModal();
+
+  const urlEl = modal.querySelector('.vacancy-detail-url');
+  urlEl.innerHTML = '';
+  if (item.url) {
+    const a = document.createElement('a');
+    a.href = item.url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = item.url;
+    urlEl.appendChild(a);
+  } else {
+    urlEl.textContent = '—';
+  }
+  modal.querySelector('.vacancy-detail-salary').textContent = item.salaryRaw || '—';
+  modal.querySelector('.vacancy-detail-query').textContent = item.searchQuery || '—';
+  modal.querySelector('.vacancy-detail-created').textContent = formatDateTime(item.createdAt);
+  modal.querySelector('.vacancy-detail-updated').textContent = formatDateTime(
+    item.updatedAt || item.vacancyBodyRefreshedAt
+  );
+  modal.querySelector('.vacancy-detail-summary').textContent = item.geminiSummary || '—';
+  modal.querySelector('.vacancy-detail-risks').textContent = item.geminiRisks || '—';
+  const tagsEl = modal.querySelector('.vacancy-detail-tags');
+  tagsEl.innerHTML = '';
+  (item.geminiTags || []).forEach((t) => {
+    const s = document.createElement('span');
+    s.className = 'tag';
+    s.textContent = t;
+    tagsEl.appendChild(s);
+  });
+  modal.querySelector('.vacancy-detail-description').textContent =
+    item.descriptionForLlm || item.descriptionPreview || item.description || 'Описание не загружено.';
+
+  const templateSelect = modal.querySelector('#vacancy-detail-template');
+  const variantSelect = modal.querySelector('#vacancy-detail-variant');
+  const letterArea = modal.querySelector('#vacancy-detail-letter');
+  templateSelect.value = normalizeTemplateType(item.templateType || item.coverLetter?.templateType);
+
+  variantSelect.innerHTML = '';
+  if (variants.length) {
+    variants.forEach((_, idx) => {
+      const opt = document.createElement('option');
+      opt.value = String(idx);
+      opt.textContent = `Вариант ${idx + 1}`;
+      variantSelect.appendChild(opt);
+    });
+    variantSelect.disabled = false;
+  } else {
+    const opt = document.createElement('option');
+    opt.value = '0';
+    opt.textContent = 'Без варианта';
+    variantSelect.appendChild(opt);
+    variantSelect.disabled = true;
+  }
+  letterArea.value = letterText;
+
+  templateSelect.onchange = async () => {
+    const selected = normalizeTemplateType(templateSelect.value);
+    try {
+      await api('/api/vacancy/template', {
+        method: 'POST',
+        body: JSON.stringify({ id: item.id, templateType: selected }),
+      });
+      showToast(`Шаблон: ${templateTypeLabel(selected)}`, 'good');
+      await reloadVacancyDetailItem();
+    } catch (e) {
+      showToast(`Ошибка шаблона: ${e.message}`, 'bad');
+    }
+  };
+
+  variantSelect.onchange = () => {
+    const idx = Number(variantSelect.value);
+    vacancyDetailState.selectedVariant = Number.isFinite(idx) ? idx : 0;
+    letterArea.value = vacancyDetailState.variants[vacancyDetailState.selectedVariant] || '';
+    vacancyDetailState.editedText = letterArea.value;
+  };
+  letterArea.oninput = () => {
+    vacancyDetailState.editedText = letterArea.value;
+    if (vacancyDetailState.variants[vacancyDetailState.selectedVariant] != null) {
+      vacancyDetailState.variants[vacancyDetailState.selectedVariant] = letterArea.value;
+    }
+  };
+
+  const saveBtn = modal.querySelector('.btn-vacancy-save');
+  const approveBtn = modal.querySelector('.btn-vacancy-approve');
+  const declineBtn = modal.querySelector('.btn-vacancy-decline');
+  const regenBtn = modal.querySelector('.btn-vacancy-regenerate');
+
+  saveBtn.onclick = async () => {
+    setVacancyDetailBusy(true);
+    try {
+      const variantsToSave = vacancyDetailState.variants.length
+        ? vacancyDetailState.variants
+        : [String(vacancyDetailState.editedText || '')];
+      await api('/api/cover-letter/save-draft', {
+        method: 'POST',
+        body: JSON.stringify({ id: item.id, variants: variantsToSave }),
+      });
+      if (vacancyDetailState.editedText.trim()) {
+        await api('/api/cover-letter/action', {
+          method: 'POST',
+          body: JSON.stringify({ id: item.id, action: 'approve', text: vacancyDetailState.editedText }),
+        });
+      }
+      showToast('Письмо сохранено', 'good');
+      await reloadVacancyDetailItem();
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setVacancyDetailBusy(false);
+    }
+  };
+
+  approveBtn.onclick = async () => {
+    const text = String(vacancyDetailState.editedText || '').trim();
+    if (!text) return alert('Введите текст письма.');
+    setVacancyDetailBusy(true);
+    try {
+      await api('/api/cover-letter/action', {
+        method: 'POST',
+        body: JSON.stringify({ id: item.id, action: 'approve', text }),
+      });
+      showToast('Письмо утверждено', 'good');
+      await reloadVacancyDetailItem();
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setVacancyDetailBusy(false);
+    }
+  };
+
+  declineBtn.onclick = async () => {
+    if (!confirm('Отклонить письмо?')) return;
+    setVacancyDetailBusy(true);
+    try {
+      await api('/api/cover-letter/action', {
+        method: 'POST',
+        body: JSON.stringify({ id: item.id, action: 'decline' }),
+      });
+      showToast('Письмо отклонено', 'neutral');
+      await reloadVacancyDetailItem();
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setVacancyDetailBusy(false);
+    }
+  };
+
+  regenBtn.onclick = async () => {
+    setVacancyDetailBusy(true);
+    try {
+      await requestCoverLetterGenerate(item.id, true, templateSelect.value);
+      showToast('Письмо сгенерировано заново', 'good');
+      await reloadVacancyDetailItem();
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setVacancyDetailBusy(false);
+    }
+  };
+
+  modal.querySelector('.vacancy-detail-letter-status').textContent =
+    `Статус письма: ${item.coverLetter?.status || '—'}`;
+  modal.querySelector('.vacancy-detail-letter-saved').textContent =
+    `Последнее сохранение: ${formatDateTime(item.updatedAt || item.vacancyBodyRefreshedAt)}`;
+
+  modal.hidden = false;
+  document.addEventListener('keydown', onVacancyDetailModalEscape);
+  if (!preserveRoute) syncRouteWithUI();
 }
 
 const draftModalEl = document.getElementById('draft-modal');
@@ -373,6 +665,9 @@ draftModalEl?.querySelector('.modal-close')?.addEventListener('click', closeDraf
 const approvedModalEl = document.getElementById('approved-letter-modal');
 approvedModalEl?.querySelector('[data-close-approved-modal]')?.addEventListener('click', closeApprovedLetterModal);
 approvedModalEl?.querySelector('.modal-close--approved')?.addEventListener('click', closeApprovedLetterModal);
+const vacancyDetailModalEl = document.getElementById('vacancy-detail-modal');
+vacancyDetailModalEl?.querySelector('[data-close-vacancy-detail]')?.addEventListener('click', () => closeVacancyDetailModal());
+vacancyDetailModalEl?.querySelector('.modal-close--vacancy-detail')?.addEventListener('click', () => closeVacancyDetailModal());
 
 // Keywords dropdown
 const keywordsBtn = document.querySelector('.btn-keywords');
@@ -382,23 +677,32 @@ const keywordsCloseBtn = document.querySelector('.keywords-close');
 
 let keywordsLoaded = false;
 
+async function showKeywordsDropdown() {
+  if (!keywordsDropdown) return;
+  keywordsDropdown.hidden = false;
+  if (!keywordsLoaded) {
+    await loadKeywords();
+  }
+}
+
+function hideKeywordsDropdown() {
+  if (!keywordsDropdown) return;
+  keywordsDropdown.hidden = true;
+}
+
 keywordsBtn?.addEventListener('click', async () => {
   if (keywordsDropdown.hidden) {
-    // Показываем dropdown
-    keywordsDropdown.hidden = false;
-    
-    // Загружаем ключевые слова если ещё не загружены
-    if (!keywordsLoaded) {
-      await loadKeywords();
-    }
+    await showKeywordsDropdown();
+    history.pushState({}, '', '/sourcing/keywords');
   } else {
-    // Скрываем dropdown
-    keywordsDropdown.hidden = true;
+    hideKeywordsDropdown();
+    syncRouteWithUI({ replace: true });
   }
 });
 
 keywordsCloseBtn?.addEventListener('click', () => {
-  keywordsDropdown.hidden = true;
+  hideKeywordsDropdown();
+  syncRouteWithUI({ replace: true });
 });
 
 // Закрыть dropdown при клике вне его
@@ -406,7 +710,8 @@ document.addEventListener('click', (e) => {
   if (!keywordsDropdown.hidden && 
       !keywordsDropdown.contains(e.target) && 
       e.target !== keywordsBtn) {
-    keywordsDropdown.hidden = true;
+    hideKeywordsDropdown();
+    syncRouteWithUI({ replace: true });
   }
 });
 
@@ -457,6 +762,7 @@ document.querySelector('.btn-sourcing')?.addEventListener('click', async () => {
   }
 
   // Показываем прогресс-бар
+  history.pushState({}, '', '/sourcing/progress');
   const progressWrap = document.querySelector('.sourcing-progress-wrap');
   const progressFill = document.querySelector('.sourcing-progress-fill');
   const progressText = document.querySelector('.sourcing-progress-text');
@@ -486,6 +792,7 @@ document.querySelector('.btn-sourcing')?.addEventListener('click', async () => {
     const sourcingBtn = document.querySelector('.btn-sourcing');
     sourcingBtn.disabled = false;
     sourcingBtn.textContent = 'Sourcing';
+    syncRouteWithUI({ replace: true });
   }
 });
 
@@ -703,8 +1010,13 @@ const applyLogModalEl = document.getElementById('apply-log-modal');
 applyLogModalEl?.querySelector('[data-close-apply-log]')?.addEventListener('click', closeApplyLogModal);
 applyLogModalEl?.querySelector('.modal-close--apply-log')?.addEventListener('click', closeApplyLogModal);
 applyLogModalEl?.querySelector('.btn-refresh-apply-log')?.addEventListener('click', () => refreshApplyLogModal());
+document.querySelector('.btn-log-apply')?.addEventListener('click', () => {
+  history.pushState({}, '', '/logs/apply-chat');
+  openApplyLogModal();
+});
 
 document.querySelector('.btn-codegen')?.addEventListener('click', async () => {
+  history.pushState({}, '', '/tools/codegen-hh');
   const btn = document.querySelector('.btn-codegen');
   btn.disabled = true;
   try {
@@ -715,6 +1027,7 @@ document.querySelector('.btn-codegen')?.addEventListener('click', async () => {
     showToast(`Ошибка: ${e.message}`, 'bad');
   } finally {
     btn.disabled = false;
+    syncRouteWithUI({ replace: true });
   }
 });
 
@@ -751,7 +1064,8 @@ if (progressText) {
 if (sourcingBtn) {
       sourcingBtn.disabled = false;
       sourcingBtn.textContent = 'Sourcing';
-    }
+}
+        syncRouteWithUI({ replace: true });
         
         // Скрываем прогресс-бар через 2 секунды и обновляем страницу
         const progressWrap = document.querySelector('.sourcing-progress-wrap');
@@ -855,8 +1169,12 @@ function renderCard(item) {
   }
 
   const a = node.querySelector('.title-link');
-  a.href = item.url;
+  a.href = item.url || '#';
   a.textContent = item.title || item.url;
+  a.addEventListener('click', (e) => {
+    e.preventDefault();
+    openVacancyDetailModal(item);
+  });
 
   const meta = node.querySelector('.meta');
   const parts = [
@@ -906,6 +1224,7 @@ function renderCard(item) {
   });
 
   const cl = item.coverLetter;
+  const itemTemplateType = normalizeTemplateType(item.templateType || cl?.templateType);
   const draftBtn = node.querySelector('.cover-draft-btn');
   const regenBtn = node.querySelector('.btn-regenerate-letter');
   const viewLetterBtn = node.querySelector('.btn-view-approved');
@@ -920,7 +1239,7 @@ function renderCard(item) {
     regenBtn.addEventListener('click', async () => {
       regenBtn.disabled = true;
       try {
-        await requestCoverLetterGenerate(item.id, false);
+        await requestCoverLetterGenerate(item.id, false, itemTemplateType);
         showToast('Новые варианты готовы', 'good');
         invalidateCache();
         await load();
@@ -931,7 +1250,7 @@ function renderCard(item) {
           );
           if (ok) {
             try {
-              await requestCoverLetterGenerate(item.id, true);
+              await requestCoverLetterGenerate(item.id, true, itemTemplateType);
               showToast('Новые варианты готовы', 'good');
               invalidateCache();
               await load();
@@ -996,7 +1315,7 @@ function renderCard(item) {
       coverBtn.disabled = true;
       refreshBtn.disabled = true;
       try {
-        await requestCoverLetterGenerate(item.id, false);
+        await requestCoverLetterGenerate(item.id, false, itemTemplateType);
         showToast('Сопроводительное сгенерировано', 'good');
         invalidateCache();
         await load();
@@ -1007,7 +1326,7 @@ function renderCard(item) {
           );
           if (confirmed) {
             try {
-              await requestCoverLetterGenerate(item.id, true);
+              await requestCoverLetterGenerate(item.id, true, itemTemplateType);
               showToast('Новые варианты готовы', 'good');
               invalidateCache();
               await load();
@@ -1124,17 +1443,32 @@ let manualTabState = {
   parsing: false,
   /** @type {string|null} error message */
   error: null,
+  /** @type {'operations'|'sales'} selected cover-letter template */
+  templateType: 'operations',
 };
+
+function createEmptyManualTabState() {
+  return {
+    vacancyId: null,
+    url: null,
+    variants: null,
+    selectedVariant: 0,
+    parsing: false,
+    error: null,
+    templateType: 'operations',
+  };
+}
 
 function setManualVacancy(item) {
   if (!item) {
-    manualTabState = { vacancyId: null, url: null, variants: null, selectedVariant: 0, parsing: false, error: null };
+    manualTabState = createEmptyManualTabState();
     return;
   }
   manualTabState.vacancyId = item.id;
   manualTabState.url = item.url;
   manualTabState.selectedVariant = 0;
   manualTabState.error = null;
+  manualTabState.templateType = normalizeTemplateType(item.templateType || item.coverLetter?.templateType);
   // If vacancy already has letter variants, use them
   if (item.coverLetter?.variants?.length) {
     manualTabState.variants = item.coverLetter.variants;
@@ -1146,7 +1480,7 @@ function setManualVacancy(item) {
 }
 
 function renderManualTabUI() {
-  const { vacancyId, url, variants, selectedVariant, parsing, error } = manualTabState;
+  const { vacancyId, url, variants, selectedVariant, parsing, error, templateType } = manualTabState;
 
   const hasVacancy = !!vacancyId;
   const hasVariants = !!(variants && variants.length);
@@ -1184,7 +1518,7 @@ function renderManualTabUI() {
         <!-- Блок 1: Заголовок + Скор (скор в правом верхнем углу) -->
         <div class="manual-header-row">
           <div class="manual-title-block">
-            <h2 class="manual-page-title">Вручную</h2>
+            <h2 class="manual-page-title">Добавить</h2>
             <h3 class="manual-vacancy-title">${hasVacancy ? '' : '<span class="manual-placeholder">Вставьте ссылку и нажмите «Загрузить»</span>'}</h3>
           </div>
           <div class="manual-score-block" id="manual-score-block" ${hasVacancy ? '' : 'hidden'}>
@@ -1219,6 +1553,13 @@ function renderManualTabUI() {
         <!-- Блок 4: Выбор варианта письма (радио-кнопки как в модалке) -->
         <div class="manual-variants-section" id="manual-variants-section">
           <div class="manual-variants-row">
+            <div class="manual-template-select-wrap">
+              <label class="manual-template-select-label" for="manual-template-type">Шаблон письма</label>
+              <select id="manual-template-type" class="manual-template-select" ${hasVacancy ? '' : 'disabled'}>
+                <option value="operations" ${templateType === 'operations' ? 'selected' : ''}>Операционный менеджер</option>
+                <option value="sales" ${templateType === 'sales' ? 'selected' : ''}>Sales менеджер</option>
+              </select>
+            </div>
             <fieldset class="modal-draft-fieldset" id="manual-variant-fieldset" ${hasVariants ? '' : 'disabled'}>
               <legend>Вариант</legend>
               ${displayVariants.map((_, i) => `
@@ -1612,6 +1953,7 @@ function initManualTabHandlers() {
   // Блок 1: Model info button
   const modelBtn = document.getElementById('manual-model-btn');
   const modelPanel = document.getElementById('manual-model-panel');
+  const templateSelect = document.getElementById('manual-template-type');
 
   // Блок 4: Radio buttons for variant selection
   const variantRadios = document.querySelectorAll('input[name="manual-variant"]');
@@ -1732,7 +2074,7 @@ function initManualTabHandlers() {
       showToast('Письмо утверждено', 'good');
 
       // Сброс формы и переключение на вкладку "Подходят"
-      manualTabState = { vacancyId: null, url: null, variants: null, selectedVariant: 0, parsing: false, error: null };
+      manualTabState = createEmptyManualTabState();
       invalidateCache();
       vacancyTabsEl.querySelectorAll('.tab').forEach((b) => b.classList.remove('active'));
       const approvedTab = vacancyTabsEl.querySelector('[data-status="approved"]');
@@ -1799,7 +2141,7 @@ function initManualTabHandlers() {
       showToast('Вакансия отклонена', 'neutral');
 
       // Сброс формы
-      manualTabState = { vacancyId: null, url: null, variants: null, selectedVariant: 0, parsing: false, error: null };
+      manualTabState = createEmptyManualTabState();
       invalidateCache();
       renderManualTabUI();
       showToast('Форма очищена', 'neutral');
@@ -1861,7 +2203,7 @@ function initManualTabHandlers() {
     }
 
     // Сбрасываем состояние и перерисовываем пустой UI
-    manualTabState = { vacancyId: null, url: null, variants: null, selectedVariant: 0, parsing: false, error: null };
+    manualTabState = createEmptyManualTabState();
     invalidateCache();
     renderManualTabUI();
     showToast('Страница очищена', 'neutral');
@@ -2137,26 +2479,164 @@ async function load(forceRefresh = false) {
   }
 }
 
-vacancyTabsEl.querySelectorAll('.tab-underlined-item').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    vacancyTabsEl.querySelectorAll('.tab-underlined-item').forEach((b) => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentStatus = btn.dataset.status;
-    // Если данные уже в кэше — отображаем сразу, иначе загружаем
-    if (cachedItems[currentStatus] !== null) {
-      if (currentStatus === 'manual') {
-        const items = cachedItems[currentStatus] || [];
-        const first = items.length > 0 ? items[items.length - 1] : null;
-        setManualVacancy(first);
-        renderManualTabUI();
-        if (first) populateManualVacancySection(first);
-      } else {
-        renderVacancyList();
-      }
+function normalizedStatus(status) {
+  return VALID_STATUSES.includes(status) ? status : 'manual';
+}
+
+function statusPath(status) {
+  return STATUS_PATHS[normalizedStatus(status)];
+}
+
+async function switchToStatus(status) {
+  currentStatus = normalizedStatus(status);
+  if (cachedItems[currentStatus] !== null) {
+    if (currentStatus === 'manual') {
+      const items = cachedItems[currentStatus] || [];
+      const first = items.length > 0 ? items[items.length - 1] : null;
+      setManualVacancy(first);
+      renderManualTabUI();
+      if (first) populateManualVacancySection(first);
     } else {
-      load();
+      renderVacancyList();
     }
-    updateRefreshSectionButton();
+  } else {
+    await load();
+  }
+  updateRefreshSectionButton();
+}
+
+function currentRouteFromUi() {
+  const applyLogModal = document.getElementById('apply-log-modal');
+  if (applyLogModal && !applyLogModal.hidden) return '/logs/apply-chat';
+  if (openVacancyDetailRecordId) return `${statusPath(currentStatus)}/${encodeURIComponent(openVacancyDetailRecordId)}`;
+  if (openDraftRecordId) return `${statusPath(currentStatus)}/${encodeURIComponent(openDraftRecordId)}/draft`;
+  if (openApprovedRecordId) return `${statusPath(currentStatus)}/${encodeURIComponent(openApprovedRecordId)}/letter`;
+  if (keywordsDropdown && !keywordsDropdown.hidden) return '/sourcing/keywords';
+  const sourcingWrap = document.querySelector('.sourcing-progress-wrap');
+  if (sourcingWrap && !sourcingWrap.hidden) return '/sourcing/progress';
+  return statusPath(currentStatus);
+}
+
+function syncRouteWithUI({ replace = false } = {}) {
+  if (suppressRouteSync) return;
+  const route = currentRouteFromUi();
+  if (window.location.pathname === route) return;
+  if (replace) {
+    history.replaceState({}, '', route);
+  } else {
+    history.pushState({}, '', route);
+  }
+}
+
+function parseRoute(pathname) {
+  const path = (pathname || '/').replace(/\/+$/, '') || '/';
+  if (path === '/') return { kind: 'status', status: 'manual', replace: true };
+  if (path === '/logs/apply-chat') return { kind: 'apply-log' };
+  if (path === '/sourcing/keywords') return { kind: 'sourcing-keywords' };
+  if (path === '/sourcing/progress') return { kind: 'sourcing-progress' };
+  if (path === '/tools/codegen-hh') return { kind: 'codegen' };
+
+  const statusMatch = path.match(/^\/vacancies\/(manual|pending|approved|rejected)$/);
+  if (statusMatch) return { kind: 'status', status: statusMatch[1] };
+
+  const deepMatch = path.match(
+    /^\/vacancies\/(manual|pending|approved|rejected)\/([^/]+)(?:\/(draft|letter))?$/
+  );
+  if (deepMatch) {
+    return {
+      kind: deepMatch[3] ? 'vacancy-modal' : 'vacancy',
+      status: deepMatch[1],
+      id: decodeURIComponent(deepMatch[2]),
+      modal: deepMatch[3] || null,
+    };
+  }
+  return null;
+}
+
+async function applyRoute(pathname, { replaceUnknown = true } = {}) {
+  suppressRouteSync = true;
+  try {
+  const route = parseRoute(pathname);
+  if (!route) {
+    if (replaceUnknown) {
+      history.replaceState({}, '', '/vacancies/manual');
+      return applyRoute('/vacancies/manual', { replaceUnknown: false });
+    }
+    return;
+  }
+
+  if (route.replace) {
+    history.replaceState({}, '', statusPath(route.status));
+  }
+
+  if (route.kind === 'status') {
+    closeApplyLogModal();
+    closeDraftModal();
+    closeApprovedLetterModal();
+    closeVacancyDetailModal({ syncRoute: false });
+    hideKeywordsDropdown();
+    await switchToStatus(route.status);
+    return;
+  }
+
+  if (route.kind === 'apply-log') {
+    closeVacancyDetailModal({ syncRoute: false });
+    await switchToStatus(currentStatus);
+    openApplyLogModal();
+    return;
+  }
+
+  if (route.kind === 'sourcing-keywords') {
+    closeVacancyDetailModal({ syncRoute: false });
+    await switchToStatus(currentStatus);
+    await showKeywordsDropdown();
+    return;
+  }
+
+  if (route.kind === 'sourcing-progress') {
+    closeVacancyDetailModal({ syncRoute: false });
+    await switchToStatus(currentStatus);
+    const progressWrap = document.querySelector('.sourcing-progress-wrap');
+    if (progressWrap) progressWrap.hidden = false;
+    return;
+  }
+
+  if (route.kind === 'codegen') {
+    closeVacancyDetailModal({ syncRoute: false });
+    await switchToStatus(currentStatus);
+    return;
+  }
+
+  await switchToStatus(route.status);
+  const items = cachedItems[route.status] || [];
+  const item = items.find((x) => x.id === route.id);
+  if (!item) {
+    showToast(`Вакансия ${route.id} не найдена`, 'neutral');
+    history.replaceState({}, '', statusPath(route.status));
+    return;
+  }
+
+  if (route.status !== 'manual') {
+    const card = document.querySelector(`[data-record-id="${item.id}"]`);
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  if (route.kind === 'vacancy-modal' && route.modal === 'draft') {
+    openDraftModal(item);
+  } else if (route.kind === 'vacancy-modal' && route.modal === 'letter') {
+    openApprovedLetterModal(item);
+  } else {
+    openVacancyDetailModal(item, { preserveRoute: true });
+  }
+  } finally {
+    suppressRouteSync = false;
+  }
+}
+
+vacancyTabsEl.querySelectorAll('.tab-underlined-item').forEach((btn) => {
+  btn.addEventListener('click', async () => {
+    history.pushState({}, '', statusPath(btn.dataset.status));
+    await applyRoute(window.location.pathname);
   });
 });
 
@@ -2207,4 +2687,28 @@ async function checkActiveSourcing() {
     console.error('Ошибка проверки активного sourcing:', e);
   }
 }
-load();
+window.addEventListener('popstate', () => {
+  applyRoute(window.location.pathname).catch((e) => {
+    console.error('Route apply failed:', e);
+  });
+});
+
+applyRoute(window.location.pathname).catch((e) => {
+  console.error('Initial route apply failed:', e);
+  load();
+});
+  templateSelect?.addEventListener('change', async () => {
+    const selected = normalizeTemplateType(templateSelect.value);
+    manualTabState.templateType = selected;
+    if (!manualTabState.vacancyId) return;
+    try {
+      await api('/api/vacancy/template', {
+        method: 'POST',
+        body: JSON.stringify({ id: manualTabState.vacancyId, templateType: selected }),
+      });
+      showToast(`Шаблон: ${templateTypeLabel(selected)}`, 'good');
+      invalidateCache();
+    } catch (e) {
+      showToast('Ошибка сохранения шаблона: ' + e.message, 'bad');
+    }
+  });

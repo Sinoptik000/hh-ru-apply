@@ -38,6 +38,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const STATIC_DIR = path.join(ROOT, 'dashboard', 'public');
 const PORT = Number(process.env.DASHBOARD_PORT || 3849) || 3849;
 
+function normalizeTemplateType(raw) {
+  return raw === 'sales' ? 'sales' : 'operations';
+}
+
 // Sourcing progress tracking
 let sourcingProgress = {
   active: false,
@@ -353,7 +357,7 @@ const server = http.createServer(async (req, res) => {
     } catch {
       return sendJson(res, 400, { error: 'Invalid JSON' });
     }
-    const { id, force } = body;
+    const { id, force, templateType: rawTemplateType } = body;
     if (!id) return sendJson(res, 400, { error: 'Нужен id' });
 
     const rec = getVacancyRecord(id);
@@ -380,9 +384,11 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 400, { error: 'Нет текста CV — положите файлы в папку CV/' });
     }
 
+    const templateType = normalizeTemplateType(rawTemplateType || rec.templateType);
+
     let result;
     try {
-      result = await generateCoverLetterVariants(rec, cvBundle);
+      result = await generateCoverLetterVariants(rec, cvBundle, { templateType });
     } catch (e) {
       return sendJson(res, 502, { error: e.message || 'Ошибка OpenRouter' });
     }
@@ -393,11 +399,35 @@ const server = http.createServer(async (req, res) => {
       variants: result.variants,
       approvedText: '',
       openRouterModel: result.providerModel || null,
+      templateType,
       updatedAt: now,
     };
-    updateVacancyRecord(id, { coverLetter });
+    updateVacancyRecord(id, { templateType, coverLetter });
 
     return sendJson(res, 200, { ok: true, coverLetter });
+  }
+
+  if (req.method === 'POST' && pathname === '/api/vacancy/template') {
+    let body;
+    try {
+      body = JSON.parse(await readBody(req));
+    } catch {
+      return sendJson(res, 400, { error: 'Invalid JSON' });
+    }
+    const { id, templateType: rawTemplateType } = body;
+    if (!id) return sendJson(res, 400, { error: 'Нужен id' });
+
+    const rec = getVacancyRecord(id);
+    if (!rec) return sendJson(res, 404, { error: 'Запись не найдена' });
+
+    const templateType = normalizeTemplateType(rawTemplateType);
+    const patch = { templateType };
+    if (rec.coverLetter) {
+      patch.coverLetter = { ...rec.coverLetter, templateType, updatedAt: new Date().toISOString() };
+    }
+    updateVacancyRecord(id, patch);
+
+    return sendJson(res, 200, { ok: true, templateType });
   }
 
   if (req.method === 'POST' && pathname === '/api/cover-letter/save-draft') {
@@ -459,6 +489,7 @@ const server = http.createServer(async (req, res) => {
         variants: [],
         approvedText: t,
         openRouterModel: model,
+        templateType: normalizeTemplateType(rec.coverLetter?.templateType || rec.templateType),
         updatedAt: now,
       };
       updateVacancyRecord(id, { coverLetter });
@@ -470,6 +501,7 @@ const server = http.createServer(async (req, res) => {
       variants: [],
       approvedText: '',
       openRouterModel: model,
+      templateType: normalizeTemplateType(rec.coverLetter?.templateType || rec.templateType),
       updatedAt: now,
     };
     updateVacancyRecord(id, { coverLetter });
@@ -589,6 +621,7 @@ if (req.method === 'POST' && pathname === '/api/vacancy/complete-manual') {
         variants: rec.coverLetter?.variants || [],
         approvedText: String(approvedText || '').trim(),
         openRouterModel: rec.coverLetter?.openRouterModel ?? null,
+        templateType: normalizeTemplateType(rec.coverLetter?.templateType || rec.templateType),
         updatedAt: now,
       },
     };
@@ -662,6 +695,7 @@ if (req.method === 'POST' && pathname === '/api/vacancy/add-from-clipboard') {
     geminiMatchCv: 'unknown',
     geminiTags: ['ручное добавление'],
     status: 'manual',
+    templateType: 'operations',
     feedbackReason: '',
     createdAt: new Date().toISOString(),
     updatedAt: null,
@@ -929,8 +963,16 @@ child.on('exit', (code, signal) => {
 
   fs.stat(filePath, (err, st) => {
     if (err || !st.isFile()) {
-      res.writeHead(404);
-      return res.end('Not found');
+      const fallback = path.join(STATIC_DIR, 'index.html');
+      fs.stat(fallback, (fallbackErr, fallbackSt) => {
+        if (fallbackErr || !fallbackSt.isFile()) {
+          res.writeHead(404);
+          return res.end('Not found');
+        }
+        res.writeHead(200, { 'Content-Type': MIME['.html'] });
+        fs.createReadStream(fallback).pipe(res);
+      });
+      return;
     }
     const ext = path.extname(filePath);
     res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });

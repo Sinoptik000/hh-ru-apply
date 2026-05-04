@@ -25,7 +25,7 @@
                 <div class="keywords-content" id="keywords-content"></div>
               </div>
             </div>
-<button type="button" class="btn btn-add-vacancy" title="Вставить ссылку на вакансию из буфера обмена и добавить её">➕ Добавить</button>
+
 <button type="button" class="btn btn-sourcing" title="Запустить поиск вакансий на hh.ru">
 Sourcing
 </button>
@@ -47,11 +47,11 @@ Sourcing
       </div>
 <div class="tabs-row">
   <div class="tabs tabs-underlined" role="tablist">
-    <button type="button" class="tab tab-underlined-item" role="tab" data-status="manual">
-      Вручную
+    <button type="button" class="tab tab-underlined-item active" role="tab" data-status="manual">
+      Добавить
       <span class="tab-badge" data-count="manual">0</span>
     </button>
-    <button type="button" class="tab tab-underlined-item active" role="tab" data-status="pending">
+    <button type="button" class="tab tab-underlined-item" role="tab" data-status="pending">
       На проверке
       <span class="tab-badge" data-count="pending">0</span>
     </button>
@@ -193,6 +193,67 @@ hidden
         <pre class="modal-approved-text"></pre>
         <div class="modal-draft-actions">
           <button type="button" class="btn ok btn-copy-approved">Копировать</button>
+        </div>
+      </div>
+    </div>
+    <div id="vacancy-detail-modal" class="modal" hidden>
+      <div class="modal-backdrop" data-close-vacancy-detail></div>
+      <div class="modal-dialog modal-dialog--vacancy-detail" role="dialog" aria-modal="true" aria-labelledby="vacancy-detail-title">
+        <div class="modal-head vacancy-detail-head">
+          <div class="vacancy-detail-head-main">
+            <h2 id="vacancy-detail-title" class="modal-title"></h2>
+            <p class="vacancy-detail-company"></p>
+          </div>
+          <button type="button" class="modal-close modal-close--vacancy-detail" aria-label="Закрыть">×</button>
+        </div>
+        <div class="vacancy-detail-metrics">
+          <span class="vacancy-detail-status"></span>
+          <span class="vacancy-detail-score"></span>
+          <span class="vacancy-detail-model"></span>
+        </div>
+        <div class="vacancy-detail-actions-top">
+          <button type="button" class="btn btn-open-hh" hidden>Открыть на hh.ru</button>
+          <button type="button" class="btn btn-back-list">Назад к списку</button>
+        </div>
+        <div class="vacancy-detail-grid">
+          <section class="vacancy-detail-section vacancy-detail-left">
+            <h3>Основное</h3>
+            <dl class="vacancy-detail-kv">
+              <dt>URL</dt><dd class="vacancy-detail-url"></dd>
+              <dt>Зарплата</dt><dd class="vacancy-detail-salary"></dd>
+              <dt>Запрос</dt><dd class="vacancy-detail-query"></dd>
+              <dt>Создано</dt><dd class="vacancy-detail-created"></dd>
+              <dt>Обновлено</dt><dd class="vacancy-detail-updated"></dd>
+            </dl>
+            <h3>AI-анализ</h3>
+            <p class="vacancy-detail-summary"></p>
+            <p class="vacancy-detail-risks"></p>
+            <div class="vacancy-detail-tags"></div>
+            <h3>Описание вакансии</h3>
+            <pre class="vacancy-detail-description"></pre>
+          </section>
+          <section class="vacancy-detail-section vacancy-detail-right">
+            <h3>Письмо</h3>
+            <label class="modal-letter-label" for="vacancy-detail-template">Шаблон письма</label>
+            <select id="vacancy-detail-template" class="manual-template-select">
+              <option value="operations">Операционный менеджер</option>
+              <option value="sales">Sales менеджер</option>
+            </select>
+            <label class="modal-letter-label" for="vacancy-detail-variant">Вариант</label>
+            <select id="vacancy-detail-variant" class="manual-template-select"></select>
+            <label class="modal-letter-label" for="vacancy-detail-letter">Текст письма</label>
+            <textarea id="vacancy-detail-letter" class="modal-letter-edit" rows="14"></textarea>
+            <div class="modal-draft-actions">
+              <button type="button" class="btn btn-vacancy-save">Сохранить</button>
+              <button type="button" class="btn ok btn-vacancy-approve">Утвердить</button>
+              <button type="button" class="btn bad btn-vacancy-decline">Отклонить</button>
+              <button type="button" class="btn btn-vacancy-regenerate">Сгенерировать заново</button>
+            </div>
+          </section>
+        </div>
+        <div class="vacancy-detail-footer">
+          <span class="vacancy-detail-letter-status"></span>
+          <span class="vacancy-detail-letter-saved"></span>
         </div>
       </div>
     </div>
