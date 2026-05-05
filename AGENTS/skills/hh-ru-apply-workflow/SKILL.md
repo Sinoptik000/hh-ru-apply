@@ -64,4 +64,4 @@ description: >-
 
 ## Письма и стиль
 
-Кратко: шаблон [config/cover-letter.example.txt](config/cover-letter.example.txt); личный файл (например `config/cover-letter.txt`) — в `.gitignore` по желанию. В дашборде после **Утвердить** письма попадают в очередь эталонов стиля для следующих генераций; опционально `config/cover-letter-style-examples.txt` (разделитель `---` на отдельной строке). Подробности и переменные окружения для LLM — [reference.md](reference.md).
+Кратко: шаблоны `config/cover-letter-ops.txt` и `config/cover-letter-sales.txt`; личные примеры стиля — `config/cover-letter-style-examples.txt` (разделитель `---` на отдельной строке). В дашборде после **Утвердить** письма попадают в очередь эталонов стиля для следующих генераций. Подробности и переменные окружения для LLM — [reference.md](reference.md).

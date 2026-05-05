@@ -96,7 +96,8 @@ Playwright with persistent context in `data/session/chromium-profile/`:
 ### Cover Letter Generation
 
 Templates and examples stored in `config/`:
-- `config/cover-letter.txt` - Base template
+- `config/cover-letter-ops.txt` - Template for operations / project support roles
+- `config/cover-letter-sales.txt` - Template for sales / partner-facing roles
 - `config/cover-letter-style-examples.txt` - User's previous letters as style examples
 
 Generation via `lib/cover-letter-openrouter.mjs` using AI cascade with style context from `lib/cover-letter-style-context.mjs`.

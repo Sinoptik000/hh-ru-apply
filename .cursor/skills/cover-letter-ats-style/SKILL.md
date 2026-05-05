@@ -3,8 +3,8 @@ name: cover-letter-ats-style
 description: >-
   Правила генерации сопроводительных писем для hh.ru: прохождение ATS-фильтров,
   избегание признаков ИИ-текста, отзеркаливание требований вакансии.
-  Используй при редактировании config/cover-letter.txt, lib/cover-letter-openrouter.mjs
-  или любом вопросе о стиле и структуре сопроводительных писем в этом проекте.
+  Используй при редактировании config/cover-letter-ops.txt, config/cover-letter-sales.txt,
+  lib/cover-letter-openrouter.mjs или любом вопросе о стиле и структуре сопроводительных писем в этом проекте.
 ---
 
 # Сопроводительные письма — стиль и ATS-оптимизация
@@ -13,7 +13,8 @@ description: >-
 
 | Файл | Роль |
 |------|------|
-| `config/cover-letter.txt` | Основной шаблон — структура, блоки, инструкции для LLM |
+| `config/cover-letter-ops.txt` | Шаблон для операционных/координаторских вакансий |
+| `config/cover-letter-sales.txt` | Шаблон для вакансий продаж и партнёров |
 | `config/cover-letter-style-examples.txt` | Эталоны стиля — LLM имитирует ритм, тон, длину фраз |
 | `CV/` | Резюме кандидата — факты для привязки к требованиям вакансии |
 | `lib/cover-letter-openrouter.mjs` | Промпт + вызов OpenRouter для генерации 3 вариантов |

@@ -11,7 +11,7 @@
 ### 2. Настройка проекта
 1. Создать `config/search-keywords.txt` с поисковыми запросами
 2. Добавить резюме в папку `CV/`
-3. Настроить `config/cover-letter.txt` - шаблон сопроводительного письма
+3. Настроить `config/cover-letter-ops.txt` и/или `config/cover-letter-sales.txt` - шаблоны сопроводительных писем
 4. Опционально: добавить `config/cover-letter-style-examples.txt` с примерами стиля
 5. Настроить OpenRouter API ключ в `config/secrets.local.env`
 

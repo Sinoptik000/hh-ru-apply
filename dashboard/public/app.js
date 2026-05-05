@@ -2226,10 +2226,8 @@ async function pollManualVacancy(recordId, url) {
             manualTabState.url = url;
             renderManualTabUI();
             populateManualVacancySection(item);
-            await runManualCoverLetterGeneration(item.id, {
-              fallbackUrl: url,
-              successMessage: 'Письмо сгенерировано автоматически',
-            });
+            // Письмо не генерируется автоматически после добавления вакансии.
+            // Пользователь может выбрать шаблон и нажать «Сгенерировать письмо» вручную.
           } else {
             manualTabState.error = 'Вакансия не найдена после загрузки';
             renderManualTabUI();
